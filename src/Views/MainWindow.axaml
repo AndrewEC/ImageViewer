@@ -1,0 +1,139 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ImageViewer.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="ImageViewer"
+        
+        xmlns:model="using:ImageViewer.Models"
+        xmlns:view="using:ImageViewer.Views"
+        xmlns:viewmodel="using:ImageViewer.ViewModels"
+        x:Class="ImageViewer.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel">
+
+    <Window.Styles>
+        <StyleInclude Source="/src/Styles/Styles.axaml" />
+    </Window.Styles>
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenRootFolderCommand}"/>
+        <KeyBinding Gesture="Ctrl+I" Command="{Binding OpenImageCommand}"/>
+        <KeyBinding Gesture="Ctrl+R" Command="{Binding RefreshCommand}"/>
+        <KeyBinding Gesture="Left" Command="{Binding ViewPreviousImageCommand}"/>
+        <KeyBinding Gesture="Right" Command="{Binding ViewNextImageCommand}"/>
+        <KeyBinding Gesture="Space" Command="{Binding StopSlideshowCommand}"/>
+    </Window.KeyBindings>
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Folder">
+                <MenuItem Header="Open" Command="{Binding OpenRootFolderCommand}"/>
+                <MenuItem Header="Refresh" Command="{Binding RefreshCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Image">
+                <MenuItem Header="Open" Command="{Binding OpenImageCommand}"/>
+                <MenuItem Header="Next" Command="{Binding ViewNextImageCommand}"/>
+                <MenuItem Header="Previous" Command="{Binding ViewPreviousImageCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Slideshow">
+                <MenuItem Header="Start" Command="{Binding StartSlideshowCommand}"/>
+                <MenuItem Header="Stop" Command="{Binding StopSlideshowCommand}"/>
+            </MenuItem>
+        </Menu>
+
+        <TabControl Classes="PageContainer"
+            SelectedIndex="{Binding SelectedTabIndex}"
+            DockPanel.Dock="Bottom">
+
+            <TabItem Header="Folders">
+                <DockPanel>
+
+                    <ScrollViewer DockPanel.Dock="Bottom">
+                        <ItemsControl ItemsSource="{Binding Folders}" Name="folderItemsControl">
+
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="model:FolderItem">
+                                    <Border Classes="PreviewBorder">
+                                        <StackPanel Orientation="Vertical">
+                                            <Image Classes="PreviewImage" Source="{Binding PreviewImage^}"/>
+                                            <Button
+                                                Content="{Binding DisplayName}"
+                                                Command="{Binding #folderItemsControl.((viewmodel:MainWindowViewModel)DataContext).SelectFolderCommand}"
+                                                CommandParameter="{Binding AbsolutePath}"
+                                                Classes="FolderSelectButton"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                </DockPanel>
+            </TabItem>
+
+            <TabItem Header="Folder View">
+                <ScrollViewer DockPanel.Dock="Bottom">
+                    <ItemsControl ItemsSource="{Binding Images}" Name="imageItemsControl">
+
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="model:ImageItem">
+                                <Border Classes="PreviewBorder">
+                                    <Button Classes="ButtonWithImagePreview"
+                                        Command="{Binding #imageItemsControl.((viewmodel:MainWindowViewModel)DataContext).ViewImageCommand}"
+                                        CommandParameter="{Binding AbsolutePath}">
+
+                                        <Button.Content>
+                                            <Image Classes="PreviewImage" Source="{Binding Thumbnail^}"/>
+                                        </Button.Content>
+                                    </Button>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+
+                    </ItemsControl>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Image View">
+                <Grid IsVisible="{Binding ImageSelected}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="10*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                        Grid.Row="0"
+                        Classes="LeftButton NavigationButton"
+                        Command="{Binding ViewPreviousImageCommand}"
+                        IsVisible="{Binding UserHasControl}">&lt;</Button>
+
+                    <Image Grid.Column="1" Grid.Row="0"
+                        Source="{Binding SelectedImage.Image^}"/>
+
+                    <Button Grid.Column="2" Grid.Row="0"
+                        Classes="NavigationButton"
+                        Command="{Binding ViewNextImageCommand}"
+                        IsVisible="{Binding UserHasControl}">&gt;</Button>
+
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+
+</Window>
