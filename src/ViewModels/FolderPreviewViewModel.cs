@@ -56,8 +56,7 @@ public class FolderPreviewViewModel : ReactiveObject
     /// <returns>An async task.</returns>
     public async Task ViewImage(string imagePath)
     {
-        string imageFullPath = Path.GetFullPath(imagePath);
-        ImageItem? image = Images.Where(image => Path.GetFullPath(image.AbsolutePath) == imageFullPath).FirstOrDefault();
+        ImageItem? image = Images.Where(image => image.AbsolutePath == imagePath).FirstOrDefault();
         if (image == null)
         {
             await MessageBoxManager.GetMessageBoxStandard(

@@ -52,7 +52,7 @@ internal static class PathPicker
             return string.Empty;
         }
 
-        return Uri.UnescapeDataString(folder[0].Path.AbsolutePath.ToString());
+        return Path.GetFullPath(Uri.UnescapeDataString(folder[0].Path.AbsolutePath.ToString()));
     }
 
     /// <summary>
@@ -102,6 +102,7 @@ internal static class PathPicker
 
         return Directory.GetFiles(directory)
             .Where(file => SupportedImageExtensions.Contains(Path.GetExtension(file)))
+            .Select(Path.GetFullPath)
             .ToArray();
     }
 
@@ -135,7 +136,7 @@ internal static class PathPicker
         }
 
         string displayName = Path.GetFileName(directory);
-        return new(directory, displayName, files[0]);
+        return new(Path.GetFullPath(directory), displayName, files[0]);
     }
 
     private static FilePickerFileType LosslessFilePickerTypes() => new("Images")

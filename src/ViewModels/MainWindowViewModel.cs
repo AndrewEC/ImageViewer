@@ -1,5 +1,6 @@
 ﻿namespace ImageViewer.ViewModels;
 
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -9,6 +10,7 @@ using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Logging;
 using ImageViewer.Log;
 using ImageViewer.Models;
 using ImageViewer.Pickers;
@@ -24,6 +26,7 @@ public partial class MainWindowViewModel : ReactiveObject
 {
     private readonly AppStateProperties appState = new();
     private readonly ConsoleLogger<MainWindowViewModel> logger = new();
+    private readonly WatcherProxy watcherProxy;
 
     /// <summary>
     /// Initializes the view model.
@@ -31,6 +34,8 @@ public partial class MainWindowViewModel : ReactiveObject
     public MainWindowViewModel()
     {
         appState.PropertyChanged += OnAppStateChanged;
+
+        watcherProxy = new(appState);
 
         ImagePreviewDataContext = new(appState);
         FolderPreviewDataContext = new(appState);
@@ -143,6 +148,7 @@ public partial class MainWindowViewModel : ReactiveObject
         {
             this.RaiseAndSetIfChanged(ref selectedTabIndex, value);
             ImagePreviewDataContext.StopSlideshow();
+            appState.SelectedTab = (AvailableTabs)value;
         }
     }
 
@@ -160,7 +166,7 @@ public partial class MainWindowViewModel : ReactiveObject
             return string.Empty;
         }
 
-        return arguments[0];
+        return Path.GetFullPath(arguments[0]);
     }
 
     private void OnAppStateChanged(object? sender, PropertyChangedEventArgs e)
@@ -174,6 +180,9 @@ public partial class MainWindowViewModel : ReactiveObject
         {
             case nameof(appState.SelectedTab):
                 SelectedTabIndex = (int)appState.SelectedTab;
+                break;
+            case nameof(appState.SelectedRootFolder):
+                watcherProxy.StartWatcher(appState.SelectedRootFolder);
                 break;
         }
     }

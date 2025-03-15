@@ -2,7 +2,6 @@ namespace ImageViewer.Models;
 
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using ImageViewer.Log;
 using ImageViewer.Pickers;
@@ -33,14 +32,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
                 return;
             }
 
-            if (value == null)
-            {
-                Folders = [];
-            }
-            else
-            {
-                Folders = PathPicker.GetValidSubFolders(value);
-            }
+            RescanRootFolder();
         }
     }
 
@@ -84,17 +76,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
                 return;
             }
 
-            if (value == null)
-            {
-                Images = [];
-                return;
-            }
-            else
-            {
-                Images = PathPicker.GetSupportedImagesInFolder(value.AbsolutePath)
-                    .Select(file => new ImageItem(file))
-                    .ToArray();
-            }
+            RescanSelectedFolder();
         }
     }
 
@@ -112,6 +94,10 @@ public sealed class AppStateProperties : INotifyPropertyChanged
             if (UpdateIfChanged(nameof(Images), ref images, value))
             {
                 SelectedImage = ReselectItem(Images, SelectedImage);
+                if (Images.Length == 0)
+                {
+                    RescanRootFolder();
+                }
             }
         }
     }
@@ -147,6 +133,44 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 #pragma warning restore SA1201
 
+    /// <summary>
+    /// Scans the currently selected root folder and updates the <see cref="Images"/>
+    /// property with the images found in the folder. If no folder is currently selected
+    /// the <see cref="Images"/> property will default to an empty array.
+    /// </summary>
+    public void RescanSelectedFolder()
+    {
+        if (SelectedFolder == null)
+        {
+            Images = [];
+            return;
+        }
+        else
+        {
+            Images = PathPicker.GetSupportedImagesInFolder(SelectedFolder.AbsolutePath)
+                .Select(file => new ImageItem(file))
+                .ToArray();
+        }
+    }
+
+    /// <summary>
+    /// Scans the currently selected root folder for all nested folders and sets the
+    /// <see cref="Folders"/> property. This search is not recursive. If no root
+    /// folder is currently selected the <see cref="Folders"/> will be set to an empty
+    /// array.
+    /// </summary>
+    public void RescanRootFolder()
+    {
+        if (SelectedRootFolder == null)
+        {
+            Folders = [];
+        }
+        else
+        {
+            Folders = PathPicker.GetValidSubFolders(SelectedRootFolder);
+        }
+    }
+
     private static T? ReselectItem<T>(T[] elements, T? previouslySelected)
     where T : class, IFindable
     {
@@ -155,14 +179,13 @@ public sealed class AppStateProperties : INotifyPropertyChanged
             return null;
         }
 
-        string previousPath = Path.GetFullPath(previouslySelected.AbsolutePath);
-
-        return elements.Where(element => Path.GetFullPath(element.AbsolutePath) == previousPath)
+        return elements.Where(element => element.AbsolutePath == previouslySelected.AbsolutePath)
             .FirstOrDefault();
     }
 
     private bool UpdateIfChanged<T>(string propName, ref T currentValue, T nextValue)
     {
+        logger.Log($"Attempt to change property [{propName}]");
         if ((currentValue == null && nextValue == null) || (currentValue?.Equals(nextValue) ?? false))
         {
             return false;
