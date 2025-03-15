@@ -36,4 +36,10 @@ public sealed class FolderItem(string absolutePath, string displayName, string p
             MemoryStream stream = new(File.ReadAllBytes(previewImagePath));
             return Bitmap.DecodeToWidth(stream, 200, BitmapInterpolationMode.LowQuality);
         });
+
+    /// <summary>
+    /// Stringifies this folder item instance.
+    /// </summary>
+    /// <returns>A string representation of this folder item.</returns>
+    public override string ToString() => string.Format($"FolderItem(AbsolutePath={AbsolutePath}, DisplayName={DisplayName}, PreviewImagePath={PreviewImagePath})");
 }

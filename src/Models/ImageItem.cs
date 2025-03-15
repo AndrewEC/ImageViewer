@@ -32,4 +32,10 @@ public sealed class ImageItem(string absolutePath)
             MemoryStream stream = new(File.ReadAllBytes(absolutePath));
             return Bitmap.DecodeToWidth(stream, 200, BitmapInterpolationMode.LowQuality);
         });
+
+    /// <summary>
+    /// Stringifies this image item instance.
+    /// </summary>
+    /// <returns>The string representation of this image item.</returns>
+    public override string ToString() => string.Format($"ImageItem(AbsolutePath={AbsolutePath})");
 }
