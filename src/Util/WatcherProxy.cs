@@ -24,7 +24,7 @@ internal sealed class WatcherProxy(AppStateProperties appState)
     /// </summary>
     /// <param name="rootFolder">The folder for the watcher to report
     /// changes on.</param>
-    public void StartWatcher(string? rootFolder)
+    public void StartFileSystemWatcher(string? rootFolder)
     {
         logger.Log("Starting file system water.");
         if (rootFolder == null)
@@ -130,7 +130,7 @@ internal sealed class WatcherProxy(AppStateProperties appState)
             return false;
         }
 
-        return appState.SelectedRootFolder == Path.GetDirectoryName(path) + "\\";
+        return PathLookup.DoWindowsPathsMatch(appState.SelectedRootFolder, Path.GetDirectoryName(path));
     }
 
     private bool WasImageInCurrentlySelectedFolder(string path)

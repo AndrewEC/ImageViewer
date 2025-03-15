@@ -68,7 +68,7 @@ public class FolderPreviewViewModel : ReactiveObject
     public async Task ViewImage(string imagePath)
     {
         ImageItem? image = Images.Where(image => image.AbsolutePath == imagePath).FirstOrDefault();
-        if (image == null)
+        if (image == null || !File.Exists(image.AbsolutePath))
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Image not found.",

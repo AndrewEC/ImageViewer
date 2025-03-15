@@ -61,7 +61,7 @@ public class FolderListViewModel : ReactiveObject
         logger.Log($"Selecting folder from path [{folderPath}]");
 
         FolderItem? folder = Folders.Where(folder => folder.AbsolutePath == folderPath).FirstOrDefault();
-        if (!Directory.Exists(folderPath) || folder == null)
+        if (folder == null || !Directory.Exists(folder.AbsolutePath))
         {
             logger.Log("The specified folder can no longer be found.");
             await MessageBoxManager.GetMessageBoxStandard(

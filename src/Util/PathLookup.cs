@@ -1,5 +1,6 @@
 namespace ImageViewer.Util;
 
+using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -30,9 +31,9 @@ public static class PathLookup
     /// </summary>
     /// <param name="directory">The directory to scan for images within.</param>
     /// <returns>An array representing the absolute paths to the images found.</returns>
-    public static string[] GetSupportedImagesInFolder(string directory)
+    public static string[] GetSupportedImagesInFolder(string? directory)
     {
-        if (!Directory.Exists(directory))
+        if (directory == null || !Directory.Exists(directory))
         {
             return [];
         }
@@ -44,14 +45,35 @@ public static class PathLookup
     }
 
     /// <summary>
+    /// Determines if two file paths match. This will normalize the path to use only
+    /// backslash separators and remove any trailing separators before making a
+    /// case insensitive comparison of the resulting string value.
+    /// </summary>
+    /// <param name="first">The first path to compare.</param>
+    /// <param name="second">The second path to compare.</param>
+    /// <returns>True if both string match based on the above criteria.</returns>
+    public static bool DoWindowsPathsMatch(string? first, string? second)
+    {
+        if ((first == null && second != null) || (first != null && second == null))
+        {
+            return false;
+        }
+
+        return string.Equals(
+            NormalizePath(first!),
+            NormalizePath(second!),
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// Gets an array of all the folders that exist within the input path. If the input
     /// path does not exist or is not a directory then this will return an empty array.
     /// </summary>
     /// <param name="path">The absolute path to the folder to be scanned.</param>
     /// <returns>An array of all the folders that could be found within the specified path.</returns>
-    public static FolderItem[] GetValidSubFolders(string path)
+    public static FolderItem[] GetValidSubFolders(string? path)
     {
-        if (!Directory.Exists(path))
+        if (path == null || !Directory.Exists(path))
         {
             return [];
         }
@@ -65,7 +87,7 @@ public static class PathLookup
 
     private static FolderItem? MapToFolderItem(string directory)
     {
-        string[] files = PathLookup.GetSupportedImagesInFolder(directory);
+        string[] files = GetSupportedImagesInFolder(directory);
 
         if (files.Length == 0)
         {
@@ -75,4 +97,7 @@ public static class PathLookup
         string displayName = Path.GetFileName(directory);
         return new(Path.GetFullPath(directory), displayName, files[0]);
     }
+
+    private static string NormalizePath(string path)
+        => Path.GetFullPath(path).Trim(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 }

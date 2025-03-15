@@ -198,7 +198,7 @@ public partial class MainWindowViewModel : ReactiveObject
                 SelectedTabIndex = (int)appState.SelectedTab;
                 break;
             case nameof(appState.SelectedRootFolder):
-                watcherProxy.StartWatcher(appState.SelectedRootFolder);
+                watcherProxy.StartFileSystemWatcher(appState.SelectedRootFolder);
                 break;
             case nameof(appState.IsSlideshowRunning):
                 IsSlideshowRunning = appState.IsSlideshowRunning;

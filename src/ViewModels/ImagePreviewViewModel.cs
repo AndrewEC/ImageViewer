@@ -73,6 +73,7 @@ public class ImagePreviewViewModel : ReactiveObject
         set
         {
             this.RaiseAndSetIfChanged(ref selectedImage, value);
+            IsImageSelected = value != null;
             ImagePathExists = File.Exists(value?.AbsolutePath ?? string.Empty);
         }
     }
@@ -154,6 +155,11 @@ public class ImagePreviewViewModel : ReactiveObject
     /// </summary>
     public void ViewNextImage()
     {
+        if (IsSlideshowRunning)
+        {
+            return;
+        }
+
         logger.Log("Navigating to next image.");
         if (!ChangeActiveImage((index) => index + 1))
         {
@@ -168,6 +174,11 @@ public class ImagePreviewViewModel : ReactiveObject
     /// </summary>
     public void ViewPreviousImage()
     {
+        if (IsSlideshowRunning)
+        {
+            return;
+        }
+
         logger.Log("Navigating to previous image.");
         if (!ChangeActiveImage((index) => index - 1))
         {
@@ -260,7 +271,7 @@ public class ImagePreviewViewModel : ReactiveObject
     // be valid. Therefore, no check for infinite recursion will be done.
     private ImageItem? SearchForValidImage(int currentIndex, Func<int, int> indexMapper, int recursiveDepth)
     {
-        if (recursiveDepth > 100)
+        if (recursiveDepth > 50)
         {
             logger.Log("Search for image failed. Reached max recursive depth.");
             return null;
@@ -328,7 +339,7 @@ public class ImagePreviewViewModel : ReactiveObject
     // be valid. Therefore, no check for infinite recursion will be done.
     private FolderItem? SearchForValidFolder(int currentIndex, Func<int, int> indexMapper, int recursiveDepth)
     {
-        if (recursiveDepth > 100)
+        if (recursiveDepth > 50)
         {
             logger.Log("Search for folder failed. Reached max recursive depth.");
             return null;
@@ -367,7 +378,6 @@ public class ImagePreviewViewModel : ReactiveObject
         switch (e.PropertyName)
         {
             case nameof(appState.SelectedImage):
-                IsImageSelected = appState.SelectedImage != null;
                 SelectedImage = appState.SelectedImage;
                 break;
             case nameof(appState.IsSlideshowRunning):

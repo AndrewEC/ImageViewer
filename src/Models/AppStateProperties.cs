@@ -94,6 +94,9 @@ public sealed class AppStateProperties : INotifyPropertyChanged
             if (UpdateIfChanged(nameof(Images), ref images, value))
             {
                 SelectedImage = ReselectItem(Images, SelectedImage);
+
+                // If there are no more mages in this folder then rescanning the root
+                // folder will remove the previous of this now empty folder.
                 if (Images.Length == 0)
                 {
                     RescanRootFolder();
@@ -128,6 +131,10 @@ public sealed class AppStateProperties : INotifyPropertyChanged
 
     private bool isSlideshowRunning = false;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the slideshow is currently
+    /// running.
+    /// </summary>
     public bool IsSlideshowRunning
     {
         get => isSlideshowRunning;
@@ -148,17 +155,9 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// </summary>
     public void RescanSelectedFolder()
     {
-        if (SelectedFolder == null)
-        {
-            Images = [];
-            return;
-        }
-        else
-        {
-            Images = PathLookup.GetSupportedImagesInFolder(SelectedFolder.AbsolutePath)
-                .Select(file => new ImageItem(file))
-                .ToArray();
-        }
+        Images = PathLookup.GetSupportedImagesInFolder(SelectedFolder?.AbsolutePath)
+            .Select(file => new ImageItem(file))
+            .ToArray();
     }
 
     /// <summary>
@@ -169,14 +168,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// </summary>
     public void RescanRootFolder()
     {
-        if (SelectedRootFolder == null)
-        {
-            Folders = [];
-        }
-        else
-        {
-            Folders = PathLookup.GetValidSubFolders(SelectedRootFolder);
-        }
+        Folders = PathLookup.GetValidSubFolders(SelectedRootFolder);
     }
 
     private static T? ReselectItem<T>(T[] elements, T? previouslySelected)
