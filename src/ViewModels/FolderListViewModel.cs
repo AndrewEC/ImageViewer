@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ImageViewer.Log;
 using ImageViewer.Models;
-using ImageViewer.Pickers;
+using ImageViewer.Util;
 using ImageViewer.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
@@ -69,7 +69,7 @@ public class FolderListViewModel : ReactiveObject
                 "Folder could not be opened because it could no longer be found. It may have been moved or deleted.",
                 ButtonEnum.Ok).ShowAsync();
 
-            Folders = PathPicker.GetValidSubFolders(appState?.SelectedRootFolder ?? string.Empty);
+            Folders = PathLookup.GetValidSubFolders(appState?.SelectedRootFolder ?? string.Empty);
             return;
         }
 

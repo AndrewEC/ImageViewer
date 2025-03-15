@@ -1,6 +1,5 @@
 ﻿namespace ImageViewer.ViewModels;
 
-using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -10,10 +9,9 @@ using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Logging;
 using ImageViewer.Log;
 using ImageViewer.Models;
-using ImageViewer.Pickers;
+using ImageViewer.Util;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
@@ -51,6 +49,7 @@ public partial class MainWindowViewModel : ReactiveObject
         ViewImageCommand = ReactiveCommand.Create<string, Task>(FolderPreviewDataContext.ViewImage);
         ViewNextImageCommand = ReactiveCommand.Create(ImagePreviewDataContext.ViewNextImage);
         ViewPreviousImageCommand = ReactiveCommand.Create(ImagePreviewDataContext.ViewPreviousImage);
+        DeleteSelectedImageCommand = ReactiveCommand.Create(ImagePreviewDataContext.DeleteSelectedImage);
 
         StartSlideshowCommand = ReactiveCommand.Create(ImagePreviewDataContext.StartSlideshow);
         StopSlideshowCommand = ReactiveCommand.Create(ImagePreviewDataContext.StopSlideshow);
@@ -136,6 +135,12 @@ public partial class MainWindowViewModel : ReactiveObject
     /// </summary>
     public ReactiveCommand<Unit, Unit> ShowImageInFolderCommand { get; }
 
+    /// <summary>
+    /// Gets the command to be invoked when the user clicks on the delete image
+    /// option in the menu.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> DeleteSelectedImageCommand { get; }
+
     private int selectedTabIndex = (int)AvailableTabs.FolderList;
 
     /// <summary>
@@ -150,6 +155,17 @@ public partial class MainWindowViewModel : ReactiveObject
             ImagePreviewDataContext.StopSlideshow();
             appState.SelectedTab = (AvailableTabs)value;
         }
+    }
+
+    private bool isSlideshowRunning = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the slideshow is currently playing.
+    /// </summary>
+    public bool IsSlideshowRunning
+    {
+        get => isSlideshowRunning;
+        set => this.RaiseAndSetIfChanged(ref isSlideshowRunning, value);
     }
 
     private static string GetStartPathFromLaunchArguments()
@@ -183,6 +199,9 @@ public partial class MainWindowViewModel : ReactiveObject
                 break;
             case nameof(appState.SelectedRootFolder):
                 watcherProxy.StartWatcher(appState.SelectedRootFolder);
+                break;
+            case nameof(appState.IsSlideshowRunning):
+                IsSlideshowRunning = appState.IsSlideshowRunning;
                 break;
         }
     }
@@ -220,7 +239,7 @@ public partial class MainWindowViewModel : ReactiveObject
     private async void OpenRootFolder()
     {
         logger.Log("Prompting user to select root folder.");
-        string selectedFolder = await PathPicker.PickFolder();
+        string selectedFolder = await ItemPicker.PromptForFolder();
         if (selectedFolder == string.Empty)
         {
             logger.Log("User closed root folder picker.");
@@ -233,7 +252,7 @@ public partial class MainWindowViewModel : ReactiveObject
     private async void OpenImage()
     {
         logger.Log("Prompting user to select image.");
-        string imagePath = await PathPicker.PickImage();
+        string imagePath = await ItemPicker.PromptForImage();
         if (imagePath == string.Empty)
         {
             logger.Log("User closed image file picker.");

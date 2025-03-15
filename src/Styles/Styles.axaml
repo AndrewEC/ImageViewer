@@ -46,4 +46,14 @@
         <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
+    <Style Selector="TextBlock.FolderDisplayNameText">
+        <Style.Resources>
+            <SolidColorBrush x:Key="DarkerTextBackground">#ddd</SolidColorBrush>
+        </Style.Resources>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="FontSize" Value="20"/>
+        <Setter Property="Background" Value="{DynamicResource DarkerTextBackground}"/>
+    </Style>
+
 </Styles>

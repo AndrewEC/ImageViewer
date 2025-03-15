@@ -23,10 +23,12 @@
         <KeyBinding Gesture="Left" Command="{Binding ViewPreviousImageCommand}"/>
         <KeyBinding Gesture="Right" Command="{Binding ViewNextImageCommand}"/>
         <KeyBinding Gesture="Space" Command="{Binding StopSlideshowCommand}"/>
+        <KeyBinding Gesture="Delete" Command="{Binding DeleteSelectedImageCommand}"/>
     </Window.KeyBindings>
 
     <DockPanel>
-        <Menu DockPanel.Dock="Top">
+        <Menu DockPanel.Dock="Top"
+            IsVisible="{Binding !IsSlideshowRunning}">
 
             <MenuItem Header="_Folder">
                 <MenuItem Header="Open" Command="{Binding OpenRootFolderCommand}"/>
@@ -38,6 +40,7 @@
                 <MenuItem Header="Previous" Command="{Binding ViewPreviousImageCommand}"/>
                 <MenuItem Header="Path" Command="{Binding ShowImagePathCommand}"/>
                 <MenuItem Header="Show in Folder" Command="{Binding ShowImageInFolderCommand}"/>
+                <MenuItem Header="Delete" Command="{Binding DeleteSelectedImageCommand}"/>
             </MenuItem>
 
             <MenuItem Header="_Slideshow">
@@ -51,15 +54,15 @@
             SelectedIndex="{Binding SelectedTabIndex}"
             DockPanel.Dock="Bottom">
 
-            <TabItem Header="Folders">
+            <TabItem Header="Folders" IsVisible="{Binding !IsSlideshowRunning}">
                 <view:FolderListView DataContext="{Binding FolderListDataContext}"/>
             </TabItem>
 
-            <TabItem Header="Folder View">
+            <TabItem Header="Folder View" IsVisible="{Binding !IsSlideshowRunning}">
                 <view:FolderPreviewView DataContext="{Binding FolderPreviewDataContext}"/>
             </TabItem>
 
-            <TabItem Header="Image View">
+            <TabItem Header="Image View" IsVisible="{Binding !IsSlideshowRunning}">
                 <view:ImagePreviewView DataContext="{Binding ImagePreviewDataContext}"/>
             </TabItem>
         </TabControl>

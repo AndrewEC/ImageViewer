@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ImageViewer.Log;
-using ImageViewer.Pickers;
+using ImageViewer.Util;
 
 /// <summary>
 /// A global state container containing all shared properties of the app.
@@ -126,6 +126,14 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         set => UpdateIfChanged(nameof(SelectedTab), ref selectedTab, value);
     }
 
+    private bool isSlideshowRunning = false;
+
+    public bool IsSlideshowRunning
+    {
+        get => isSlideshowRunning;
+        set => UpdateIfChanged(nameof(IsSlideshowRunning), ref isSlideshowRunning, value);
+    }
+
 #pragma warning disable SA1201
     /// <summary>
     /// An event to notify when a property within this state object changes.
@@ -147,7 +155,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         }
         else
         {
-            Images = PathPicker.GetSupportedImagesInFolder(SelectedFolder.AbsolutePath)
+            Images = PathLookup.GetSupportedImagesInFolder(SelectedFolder.AbsolutePath)
                 .Select(file => new ImageItem(file))
                 .ToArray();
         }
@@ -167,7 +175,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         }
         else
         {
-            Folders = PathPicker.GetValidSubFolders(SelectedRootFolder);
+            Folders = PathLookup.GetValidSubFolders(SelectedRootFolder);
         }
     }
 

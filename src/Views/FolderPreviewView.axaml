@@ -9,31 +9,38 @@
              x:Class="ImageViewer.Views.FolderPreviewView"
              x:DataType="viewmodel:FolderPreviewViewModel">
 
-    <ScrollViewer DockPanel.Dock="Bottom">
-        <ItemsControl ItemsSource="{Binding Images}" Name="imageItemsControl">
+    <DockPanel DockPanel.Dock="Bottom">
 
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <WrapPanel />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
+        <TextBlock Text="{Binding SelectedFolder.DisplayName}"
+            Classes="FolderDisplayNameText"
+            DockPanel.Dock="Top"/>
 
-            <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="model:ImageItem">
-                    <Border Classes="PreviewBorder">
-                        <Button Classes="ButtonWithImagePreview"
-                            Command="{Binding #imageItemsControl.((viewmodel:FolderPreviewViewModel)DataContext).ViewImageCommand}"
-                            CommandParameter="{Binding AbsolutePath}">
+        <ScrollViewer DockPanel.Dock="Bottom">
+            <ItemsControl ItemsSource="{Binding Images}" Name="imageItemsControl">
 
-                            <Button.Content>
-                                <Image Classes="PreviewImage" Source="{Binding Thumbnail^}"/>
-                            </Button.Content>
-                        </Button>
-                    </Border>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
 
-        </ItemsControl>
-    </ScrollViewer>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="model:ImageItem">
+                        <Border Classes="PreviewBorder">
+                            <Button Classes="ButtonWithImagePreview"
+                                Command="{Binding #imageItemsControl.((viewmodel:FolderPreviewViewModel)DataContext).ViewImageCommand}"
+                                CommandParameter="{Binding AbsolutePath}">
+
+                                <Button.Content>
+                                    <Image Classes="PreviewImage" Source="{Binding Thumbnail^}"/>
+                                </Button.Content>
+                            </Button>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
 
 </UserControl>

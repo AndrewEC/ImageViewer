@@ -21,7 +21,7 @@
             Grid.Row="0"
             Classes="LeftButton NavigationButton"
             Command="{Binding ViewPreviousImageCommand}"
-            IsVisible="{Binding IsSlideshowRunning}">&lt;</Button>
+            IsVisible="{Binding !IsSlideshowRunning}">&lt;</Button>
 
         <Image Grid.Column="1" Grid.Row="0"
             Source="{Binding SelectedImage.Image^}"
@@ -35,7 +35,7 @@
         <Button Grid.Column="2" Grid.Row="0"
             Classes="NavigationButton"
             Command="{Binding ViewNextImageCommand}"
-            IsVisible="{Binding IsSlideshowRunning}">&gt;</Button>
+            IsVisible="{Binding !IsSlideshowRunning}">&gt;</Button>
 
     </Grid>
 

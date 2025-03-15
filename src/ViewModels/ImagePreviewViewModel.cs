@@ -8,7 +8,7 @@ using System.Reactive;
 using Avalonia.Threading;
 using ImageViewer.Log;
 using ImageViewer.Models;
-using ImageViewer.Pickers;
+using ImageViewer.Util;
 using ImageViewer.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
@@ -85,7 +85,7 @@ public class ImagePreviewViewModel : ReactiveObject
     /// </summary>
     public bool IsSlideshowRunning
     {
-        get => !isSlideshowRunning;
+        get => isSlideshowRunning;
         set => this.RaiseAndSetIfChanged(ref isSlideshowRunning, value);
     }
 
@@ -108,7 +108,7 @@ public class ImagePreviewViewModel : ReactiveObject
     public async void StartSlideshow()
     {
         logger.Log("Starting slideshow.");
-        if (!IsSlideshowRunning || SelectedImage == null)
+        if (IsSlideshowRunning || SelectedImage == null)
         {
             logger.Log("Slideshow will not start because it is already running or there is no image selected.");
             return;
@@ -124,7 +124,8 @@ public class ImagePreviewViewModel : ReactiveObject
             DispatcherPriority.Normal,
             OnSlideshowTimerTick);
 
-        IsSlideshowRunning = true;
+        WindowLookup.RequestFullScreen();
+        appState.IsSlideshowRunning = true;
     }
 
     /// <summary>
@@ -142,7 +143,8 @@ public class ImagePreviewViewModel : ReactiveObject
 
         slideshowTimer.Stop();
         slideshowTimer = null;
-        IsSlideshowRunning = false;
+        WindowLookup.RequestRestore();
+        appState.IsSlideshowRunning = false;
     }
 
     /// <summary>
@@ -171,6 +173,43 @@ public class ImagePreviewViewModel : ReactiveObject
         {
             ViewLastImage();
         }
+    }
+
+    /// <summary>
+    /// Prompts the user to delete the currently selected image then deletes it. This will
+    /// have no affect if no image has been selected or if the selected image cannot be
+    /// found on disk. After deleting the image this will automatically switch to display
+    /// the next available image.</summary>
+    public async void DeleteSelectedImage()
+    {
+        logger.Log("Deleting currently selected image.");
+        if (appState.SelectedImage == null)
+        {
+            return;
+        }
+
+        string pathToDelete = appState.SelectedImage.AbsolutePath;
+
+        if (!Path.Exists(pathToDelete))
+        {
+            return;
+        }
+
+        logger.Log($"Prompting user to delete image at [{pathToDelete}].");
+        ButtonResult result = await MessageBoxManager.GetMessageBoxStandard(
+            "Confirm Delete",
+            "Are you sure you want to delete this image? This action cannot be undone.",
+            ButtonEnum.OkCancel).ShowAsync();
+
+        if (result != ButtonResult.Ok)
+        {
+            logger.Log("User declined to delete image.");
+            return;
+        }
+
+        ViewNextImage();
+
+        File.Delete(pathToDelete);
     }
 
     private void OnSlideshowTimerTick(object? sender, EventArgs e)
@@ -307,7 +346,7 @@ public class ImagePreviewViewModel : ReactiveObject
         }
 
         FolderItem folder = appState.Folders[currentIndex];
-        if (PathPicker.GetSupportedImagesInFolder(folder.AbsolutePath).Length > 0)
+        if (PathLookup.GetSupportedImagesInFolder(folder.AbsolutePath).Length > 0)
         {
             logger.Log($"Found value folder at path [{folder.AbsolutePath}].");
             return folder;
@@ -330,6 +369,9 @@ public class ImagePreviewViewModel : ReactiveObject
             case nameof(appState.SelectedImage):
                 IsImageSelected = appState.SelectedImage != null;
                 SelectedImage = appState.SelectedImage;
+                break;
+            case nameof(appState.IsSlideshowRunning):
+                IsSlideshowRunning = appState.IsSlideshowRunning;
                 break;
         }
     }

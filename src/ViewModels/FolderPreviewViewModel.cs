@@ -48,6 +48,17 @@ public class FolderPreviewViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref images, value);
     }
 
+    private FolderItem? selectedFolder = null;
+
+    /// <summary>
+    /// Gets or sets the folder the user has selected.
+    /// </summary>
+    public FolderItem? SelectedFolder
+    {
+        get => selectedFolder;
+        set => this.RaiseAndSetIfChanged(ref selectedFolder, value);
+    }
+
     /// <summary>
     /// Attempts to lookup and set the currently selected image to the
     /// image whose absolute path matches the absolute path provided.
@@ -81,6 +92,9 @@ public class FolderPreviewViewModel : ReactiveObject
         {
             case nameof(appState.Images):
                 Images = appState.Images;
+                break;
+            case nameof(appState.SelectedFolder):
+                SelectedFolder = appState.SelectedFolder;
                 break;
         }
     }

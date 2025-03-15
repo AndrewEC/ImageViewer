@@ -1,4 +1,4 @@
-namespace ImageViewer.ViewModels;
+namespace ImageViewer.Util;
 
 using System.IO;
 using System.Linq;
