@@ -27,18 +27,24 @@
 
     <DockPanel>
         <Menu DockPanel.Dock="Top">
+
             <MenuItem Header="_Folder">
                 <MenuItem Header="Open" Command="{Binding OpenRootFolderCommand}"/>
             </MenuItem>
+
             <MenuItem Header="_Image">
                 <MenuItem Header="Open" Command="{Binding OpenImageCommand}"/>
                 <MenuItem Header="Next" Command="{Binding ViewNextImageCommand}"/>
                 <MenuItem Header="Previous" Command="{Binding ViewPreviousImageCommand}"/>
+                <MenuItem Header="Path" Command="{Binding ShowImagePathCommand}"/>
+                <MenuItem Header="Show in Folder" Command="{Binding ShowImageInFolderCommand}"/>
             </MenuItem>
+
             <MenuItem Header="_Slideshow">
                 <MenuItem Header="Start" Command="{Binding StartSlideshowCommand}"/>
                 <MenuItem Header="Stop" Command="{Binding StopSlideshowCommand}"/>
             </MenuItem>
+
         </Menu>
 
         <TabControl Classes="PageContainer"

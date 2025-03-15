@@ -68,6 +68,7 @@ public class FolderPreviewViewModel : ReactiveObject
         }
 
         appState.SelectedImage = image;
+        appState.SelectedTab = AvailableTabs.ImagePreview;
     }
 
     private void OnAppStateChanged(object? sender, PropertyChangedEventArgs e)

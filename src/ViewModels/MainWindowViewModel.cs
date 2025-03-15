@@ -1,6 +1,7 @@
 ﻿namespace ImageViewer.ViewModels;
 
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reactive;
@@ -8,8 +9,11 @@ using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using ImageViewer.Log;
 using ImageViewer.Models;
 using ImageViewer.Pickers;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 using ReactiveUI;
 
 /// <summary>
@@ -19,6 +23,7 @@ using ReactiveUI;
 public partial class MainWindowViewModel : ReactiveObject
 {
     private readonly AppStateProperties appState = new();
+    private readonly ConsoleLogger<MainWindowViewModel> logger = new();
 
     /// <summary>
     /// Initializes the view model.
@@ -33,6 +38,8 @@ public partial class MainWindowViewModel : ReactiveObject
 
         OpenRootFolderCommand = ReactiveCommand.Create(OpenRootFolder);
         OpenImageCommand = ReactiveCommand.Create(OpenImage);
+        ShowImagePathCommand = ReactiveCommand.Create(ShowImagePath);
+        ShowImageInFolderCommand = ReactiveCommand.Create(ShowImageInFolder);
 
         SelectFolderCommand = ReactiveCommand.Create<string, Task>(FolderListDataContext.SelectFolder);
 
@@ -112,6 +119,18 @@ public partial class MainWindowViewModel : ReactiveObject
     /// </summary>
     public ReactiveCommand<Unit, Unit> StopSlideshowCommand { get; }
 
+    /// <summary>
+    /// Gets the command to be invoked when the user clicks the show image path
+    /// option from the dropdown menu.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> ShowImagePathCommand { get; }
+
+    /// <summary>
+    /// Gets the command to be invoked when the user clicks the show in explorer
+    /// option from the dropdown menu.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> ShowImageInFolderCommand { get; }
+
     private int selectedTabIndex = (int)AvailableTabs.FolderList;
 
     /// <summary>
@@ -120,7 +139,11 @@ public partial class MainWindowViewModel : ReactiveObject
     public int SelectedTabIndex
     {
         get => selectedTabIndex;
-        set => this.RaiseAndSetIfChanged(ref selectedTabIndex, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref selectedTabIndex, value);
+            ImagePreviewDataContext.StopSlideshow();
+        }
     }
 
     private static string GetStartPathFromLaunchArguments()
@@ -149,31 +172,49 @@ public partial class MainWindowViewModel : ReactiveObject
 
         switch (e.PropertyName)
         {
-            case nameof(appState.Folders):
-                SelectedTabIndex = (int)AvailableTabs.FolderList;
-                break;
-            case nameof(appState.SelectedFolder):
-                if (appState.SelectedFolder != null)
-                {
-                    SelectedTabIndex = (int)AvailableTabs.FolderPreview;
-                }
-
-                break;
-            case nameof(appState.SelectedImage):
-                if (appState.SelectedImage != null)
-                {
-                    SelectedTabIndex = (int)AvailableTabs.ImagePreview;
-                }
-
+            case nameof(appState.SelectedTab):
+                SelectedTabIndex = (int)appState.SelectedTab;
                 break;
         }
     }
 
+    private async void ShowImagePath()
+    {
+        logger.Log("Showing path to currently selected.");
+        if (appState.SelectedImage == null)
+        {
+            logger.Log("Cannot show path to currently selected image because no image has been selected.");
+            return;
+        }
+
+        await MessageBoxManager.GetMessageBoxStandard(
+                "Image Path",
+                appState.SelectedImage.AbsolutePath,
+                ButtonEnum.Ok).ShowAsync();
+    }
+
+    private void ShowImageInFolder()
+    {
+        logger.Log("Showing currently selected image in folder.");
+        if (appState.SelectedImage == null)
+        {
+            logger.Log("Selected image cannot be shown because no image has been selected.");
+            return;
+        }
+
+        string imagePath = appState.SelectedImage.AbsolutePath.Replace("/", "\\");
+        string arguments = $"/select,\"{imagePath}\"";
+        logger.Log($"Starting explorer process with arguments [{arguments}]");
+        Process.Start("explorer.exe", arguments);
+    }
+
     private async void OpenRootFolder()
     {
+        logger.Log("Prompting user to select root folder.");
         string selectedFolder = await PathPicker.PickFolder();
         if (selectedFolder == string.Empty)
         {
+            logger.Log("User closed root folder picker.");
             return;
         }
 
@@ -182,9 +223,11 @@ public partial class MainWindowViewModel : ReactiveObject
 
     private async void OpenImage()
     {
+        logger.Log("Prompting user to select image.");
         string imagePath = await PathPicker.PickImage();
         if (imagePath == string.Empty)
         {
+            logger.Log("User closed image file picker.");
             return;
         }
 
@@ -193,11 +236,13 @@ public partial class MainWindowViewModel : ReactiveObject
 
     private async Task NavigateDirectlyToImage(string imagePath)
     {
+        logger.Log($"Navigating directly to image with path [{imagePath}]");
         string selectedFolder = Path.GetDirectoryName(imagePath) ?? string.Empty;
         string rootFolder = Path.GetDirectoryName(selectedFolder) ?? string.Empty;
 
         if (selectedFolder == null || rootFolder == null)
         {
+            logger.Log("Could not navigate directly to path because the path is missing one or more parent folders.");
             return;
         }
 
@@ -208,14 +253,17 @@ public partial class MainWindowViewModel : ReactiveObject
 
     private async void LoadInitialFolder()
     {
+        logger.Log("Initializing app.");
         string startPath = GetStartPathFromLaunchArguments();
         if (startPath == string.Empty)
         {
+            logger.Log("No startup path provided. No default image or root folder will be selected.");
             return;
         }
 
         if (File.GetAttributes(startPath).HasFlag(FileAttributes.Directory))
         {
+            logger.Log($"Initializing app with pre-selected root folder of [{startPath}]");
             appState.SelectedRootFolder = startPath;
         }
         else

@@ -1,17 +1,28 @@
 namespace ImageViewer.Models;
 
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using ImageViewer.Log;
 using ImageViewer.Pickers;
 
+/// <summary>
+/// A global state container containing all shared properties of the app.
+/// </summary>
+[SuppressMessage("Ordering Rules", "SA1201", Justification = "Reviewed.")]
 public sealed class AppStateProperties : INotifyPropertyChanged
 {
     private readonly ConsoleLogger<AppStateProperties> logger = new();
 
     private string? selectedRootFolder = null;
 
+    /// <summary>
+    /// Gets or sets the currently selected folder. Upon setting this to a
+    /// non-null value this will trigger an update in the <see cref="Folders"/>
+    /// by scanning the directly nested folders of the updated root folder
+    /// to find folders that contain at least one image.
+    /// </summary>
     public string? SelectedRootFolder
     {
         get => selectedRootFolder;
@@ -28,27 +39,41 @@ public sealed class AppStateProperties : INotifyPropertyChanged
             }
             else
             {
-                Folders = GetSubFolderItems(value);
+                Folders = PathPicker.GetValidSubFolders(value);
             }
         }
     }
 
     private FolderItem[] folders = [];
 
+    /// <summary>
+    /// Gets or sets the list of folders that are nested under the
+    /// <see cref="SelectedRootFolder"/>. Upon being updated this
+    /// will set the <see cref="SelectedFolder"/> to null.
+    /// </summary>
     public FolderItem[] Folders
     {
         get => folders;
         set
         {
-            if (UpdateIfChanged(nameof(Folders), ref folders, value))
+            if (!UpdateIfChanged(nameof(Folders), ref folders, value))
             {
-                SelectedFolder = null;
+                return;
             }
+
+            SelectedFolder = ReselectItem(Folders, SelectedFolder);
         }
     }
 
     private FolderItem? selectedFolder = null;
 
+    /// <summary>
+    /// Gets or sets the currently selected folder. Upon being updated
+    /// this will trigger an update in the <see cref="Images"/> property.
+    /// This update will set the Images to an empty array, if the new value is null,
+    /// or will set the array to contain a set of image files found within the
+    /// folder path represented by the new value.
+    /// </summary>
     public FolderItem? SelectedFolder
     {
         get => selectedFolder;
@@ -66,7 +91,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
             }
             else
             {
-                Images = GetSupportedImagesInFolder(value.AbsolutePath)
+                Images = PathPicker.GetSupportedImagesInFolder(value.AbsolutePath)
                     .Select(file => new ImageItem(file))
                     .ToArray();
             }
@@ -75,6 +100,10 @@ public sealed class AppStateProperties : INotifyPropertyChanged
 
     private ImageItem[] images = [];
 
+    /// <summary>
+    /// Gets or sets the array of images the user can pick from. Upon updating
+    /// this will set the <see cref="SelectedImage"/> property to null.
+    /// </summary>
     public ImageItem[] Images
     {
         get => images;
@@ -82,59 +111,54 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         {
             if (UpdateIfChanged(nameof(Images), ref images, value))
             {
-                SelectedImage = null;
+                SelectedImage = ReselectItem(Images, SelectedImage);
             }
         }
     }
 
     private ImageItem? selectedImage = null;
 
+    /// <summary>
+    /// Gets or sets the currently selected image.
+    /// is null or not.
+    /// </summary>
     public ImageItem? SelectedImage
     {
         get => selectedImage;
-        set
-        {
-            if (!UpdateIfChanged(nameof(SelectedImage), ref selectedImage, value))
-            {
-                return;
-            }
-
-            IsImageSelected = value != null;
-        }
+        set => UpdateIfChanged(nameof(SelectedImage), ref selectedImage, value);
     }
 
-    private bool isImageSelected = false;
+    private AvailableTabs selectedTab = AvailableTabs.FolderList;
 
-    public bool IsImageSelected
+    /// <summary>
+    /// Gets or sets the numeric enum representing the currently selected tab
+    /// of the tab control.
+    /// </summary>
+    public AvailableTabs SelectedTab
     {
-        get => isImageSelected;
-        set => UpdateIfChanged(nameof(IsImageSelected), ref isImageSelected, value);
+        get => selectedTab;
+        set => UpdateIfChanged(nameof(SelectedTab), ref selectedTab, value);
     }
 
+#pragma warning disable SA1201
+    /// <summary>
+    /// An event to notify when a property within this state object changes.
+    /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
+#pragma warning restore SA1201
 
-    private static string[] GetSupportedImagesInFolder(string directory) => Directory.GetFiles(directory)
-            .Where(file => PathPicker.SupportedImageExtensions.Contains(Path.GetExtension(file)))
-            .ToArray();
-
-    private static FolderItem[] GetSubFolderItems(string path)
-        => Directory.GetDirectories(path)
-            .Select(MapToFolderItem)
-            .Where(folder => folder != null)
-            .OfType<FolderItem>()
-            .ToArray();
-
-    private static FolderItem? MapToFolderItem(string directory)
+    private static T? ReselectItem<T>(T[] elements, T? previouslySelected)
+    where T : class, IFindable
     {
-        string[] files = GetSupportedImagesInFolder(directory);
-
-        if (files.Length == 0)
+        if (previouslySelected == null)
         {
             return null;
         }
 
-        string displayName = Path.GetFileName(directory);
-        return new(directory, displayName, files[0]);
+        string previousPath = Path.GetFullPath(previouslySelected.AbsolutePath);
+
+        return elements.Where(element => Path.GetFullPath(element.AbsolutePath) == previousPath)
+            .FirstOrDefault();
     }
 
     private bool UpdateIfChanged<T>(string propName, ref T currentValue, T nextValue)

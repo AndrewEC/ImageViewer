@@ -10,7 +10,7 @@ using Avalonia.Media.Imaging;
 /// <param name="absolutePath">The absolute path to the folder on disk.</param>
 /// <param name="displayName">The name of the folder.</param>
 /// <param name="previewImagePath">The absolute path to the first image within the folder.</param>
-public sealed class FolderItem(string absolutePath, string displayName, string previewImagePath)
+public sealed class FolderItem(string absolutePath, string displayName, string previewImagePath) : IFindable
 {
     /// <summary>
     /// Gets the absolute path to the folder on disk.
@@ -28,7 +28,8 @@ public sealed class FolderItem(string absolutePath, string displayName, string p
     public string PreviewImagePath { get; } = previewImagePath;
 
     /// <summary>
-    /// Gets a thumbnail of the first image in the folder.
+    /// Gets a thumbnail of the first image in the folder. Sized so the width
+    /// is 200 pixels in size.
     /// </summary>
     public Task<Bitmap> PreviewImage { get; }
         = Task.Run(() =>

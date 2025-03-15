@@ -3,10 +3,12 @@ namespace ImageViewer.ViewModels;
 using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Reactive;
 using Avalonia.Threading;
 using ImageViewer.Log;
 using ImageViewer.Models;
+using ImageViewer.Pickers;
 using ImageViewer.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
@@ -68,7 +70,11 @@ public class ImagePreviewViewModel : ReactiveObject
     public ImageItem? SelectedImage
     {
         get => selectedImage;
-        set => this.RaiseAndSetIfChanged(ref selectedImage, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref selectedImage, value);
+            ImagePathExists = File.Exists(value?.AbsolutePath ?? string.Empty);
+        }
     }
 
     private bool isSlideshowRunning = false;
@@ -81,6 +87,18 @@ public class ImagePreviewViewModel : ReactiveObject
     {
         get => !isSlideshowRunning;
         set => this.RaiseAndSetIfChanged(ref isSlideshowRunning, value);
+    }
+
+    private bool imagePathExists = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the currently selected image
+    /// can still be found on disk.
+    /// </summary>
+    public bool ImagePathExists
+    {
+        get => imagePathExists;
+        set => this.RaiseAndSetIfChanged(ref imagePathExists, value);
     }
 
     /// <summary>
@@ -123,6 +141,7 @@ public class ImagePreviewViewModel : ReactiveObject
         }
 
         slideshowTimer.Stop();
+        slideshowTimer = null;
         IsSlideshowRunning = false;
     }
 
@@ -189,32 +208,46 @@ public class ImagePreviewViewModel : ReactiveObject
             return false;
         }
 
-        int nextIndex = indexMapper.Invoke(index);
-        if (appState.Images.IsValidIndex(nextIndex))
+        ImageItem? nextImage = SearchForValidImage(indexMapper.Invoke(index), indexMapper);
+
+        if (nextImage != null)
         {
-            appState.SelectedImage = appState.Images[nextIndex];
-            return true;
+            appState.SelectedImage = nextImage;
         }
 
-        logger.Log($"Next index [{nextIndex}] was outside bounds of image array. Switching active folder.");
+        return nextImage != null;
+    }
 
-        if (!ChangeActiveFolder(indexMapper))
+    // Assumption is that at least one folder from the appState.Images array will
+    // be valid. Therefore, no check for infinite recursion will be done.
+    private ImageItem? SearchForValidImage(int currentIndex, Func<int, int> indexMapper)
+    {
+        if (currentIndex < 0)
         {
-            return false;
+            if (!ChangeActiveFolder(indexMapper))
+            {
+                return null;
+            }
+
+            return SearchForValidImage(appState.Images.Length - 1, indexMapper);
+        }
+        else if (currentIndex >= appState.Images.Length)
+        {
+            if (!ChangeActiveFolder(indexMapper))
+            {
+                return null;
+            }
+
+            return SearchForValidImage(0, indexMapper);
         }
 
-        if (nextIndex < index)
+        ImageItem image = appState.Images[currentIndex];
+        if (File.Exists(image.AbsolutePath))
         {
-            logger.Log("Switching to last image in new folder.");
-            appState.SelectedImage = appState.Images[^1];
-        }
-        else
-        {
-            logger.Log("Switching to first image in new folder.");
-            appState.SelectedImage = appState.Images[0];
+            return image;
         }
 
-        return true;
+        return SearchForValidImage(indexMapper.Invoke(currentIndex), indexMapper);
     }
 
     private bool ChangeActiveFolder(Func<int, int> indexMapper)
@@ -233,15 +266,30 @@ public class ImagePreviewViewModel : ReactiveObject
             return false;
         }
 
-        int nextIndex = indexMapper.Invoke(index);
-        if (!appState.Folders.IsValidIndex(nextIndex))
+        appState.SelectedFolder = SearchForValidFolder(indexMapper.Invoke(index), indexMapper);
+        return true;
+    }
+
+    // Assumption is that at least one folder from the appState.Folders array will
+    // be valid. Therefore, no check for infinite recursion will be done.
+    private FolderItem SearchForValidFolder(int currentIndex, Func<int, int> indexMapper)
+    {
+        if (currentIndex < 0)
         {
-            logger.Log($"Next folder index of [{nextIndex}] was outside folder array bounds. Folder will not be changed.");
-            return false;
+            return SearchForValidFolder(appState.Folders.Length - 1, indexMapper);
+        }
+        else if (currentIndex >= appState.Folders.Length)
+        {
+            return SearchForValidFolder(0, indexMapper);
         }
 
-        appState.SelectedFolder = appState.Folders[nextIndex];
-        return true;
+        FolderItem folder = appState.Folders[currentIndex];
+        if (PathPicker.GetSupportedImagesInFolder(folder.AbsolutePath).Length > 0)
+        {
+            return folder;
+        }
+
+        return SearchForValidFolder(indexMapper(currentIndex), indexMapper);
     }
 
     private void OnAppStateChanged(object? sender, PropertyChangedEventArgs e)
@@ -253,10 +301,8 @@ public class ImagePreviewViewModel : ReactiveObject
 
         switch (e.PropertyName)
         {
-            case nameof(appState.IsImageSelected):
-                IsImageSelected = appState.IsImageSelected;
-                break;
             case nameof(appState.SelectedImage):
+                IsImageSelected = appState.SelectedImage != null;
                 SelectedImage = appState.SelectedImage;
                 break;
         }

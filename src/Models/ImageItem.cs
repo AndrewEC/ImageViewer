@@ -8,7 +8,7 @@ using Avalonia.Media.Imaging;
 /// Represents the details of a sigle image within a selected sub-folder.
 /// </summary>
 /// <param name="absolutePath">The absolute path to the image on disk.</param>
-public sealed class ImageItem(string absolutePath)
+public sealed class ImageItem(string absolutePath) : IFindable
 {
     /// <summary>
     /// Gets the absolute path to the image on disk.

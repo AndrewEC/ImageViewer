@@ -4,7 +4,7 @@ namespace ImageViewer.Models;
 /// Numeric enumeration representing the indexes of the tabs
 /// available in the main tabs control.
 /// </summary>
-internal enum AvailableTabs
+public enum AvailableTabs
 {
     /// <summary>
     /// The first tab where the root folder can be selected and the
