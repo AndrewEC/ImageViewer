@@ -43,6 +43,7 @@ public partial class MainWindowViewModel : ReactiveObject
         OpenImageCommand = ReactiveCommand.Create(OpenImage);
         ShowImagePathCommand = ReactiveCommand.Create(ShowImagePath);
         ShowImageInFolderCommand = ReactiveCommand.Create(ShowImageInFolder);
+        OpenFolderInExplorerCommand = ReactiveCommand.Create(OpenFolderInExplorer);
 
         SelectFolderCommand = ReactiveCommand.Create<string, Task>(FolderListDataContext.SelectFolder);
 
@@ -141,6 +142,12 @@ public partial class MainWindowViewModel : ReactiveObject
     /// </summary>
     public ReactiveCommand<Unit, Unit> DeleteSelectedImageCommand { get; }
 
+    /// <summary>
+    /// Gets the command to be invoked when the user clicks on the open in
+    /// explorer menu option.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> OpenFolderInExplorerCommand { get; }
+
     private int selectedTabIndex = (int)AvailableTabs.FolderList;
 
     /// <summary>
@@ -230,10 +237,27 @@ public partial class MainWindowViewModel : ReactiveObject
             return;
         }
 
+        appState.SelectedTab = AvailableTabs.ImagePreview;
+
         string imagePath = appState.SelectedImage.AbsolutePath.Replace("/", "\\");
         string arguments = $"/select,\"{imagePath}\"";
         logger.Log($"Starting explorer process with arguments [{arguments}]");
         Process.Start("explorer.exe", arguments);
+    }
+
+    private void OpenFolderInExplorer()
+    {
+        logger.Log("Opening current folder in explorer.");
+        if (appState.SelectedFolder == null)
+        {
+            logger.Log("Selected folder cannot be opened because no folder has been selected.");
+            return;
+        }
+
+        appState.SelectedTab = AvailableTabs.FolderPreview;
+
+        logger.Log($"Opening folder [{appState.SelectedFolder.AbsolutePath}].");
+        Process.Start("explorer.exe", appState.SelectedFolder.AbsolutePath);
     }
 
     private async void OpenRootFolder()

@@ -22,7 +22,7 @@
         <KeyBinding Gesture="Ctrl+I" Command="{Binding OpenImageCommand}"/>
         <KeyBinding Gesture="Left" Command="{Binding ViewPreviousImageCommand}"/>
         <KeyBinding Gesture="Right" Command="{Binding ViewNextImageCommand}"/>
-        <KeyBinding Gesture="Space" Command="{Binding StopSlideshowCommand}"/>
+        <KeyBinding Gesture="Escape" Command="{Binding StopSlideshowCommand}"/>
         <KeyBinding Gesture="Delete" Command="{Binding DeleteSelectedImageCommand}"/>
     </Window.KeyBindings>
 
@@ -32,6 +32,7 @@
 
             <MenuItem Header="_Folder">
                 <MenuItem Header="Open" Command="{Binding OpenRootFolderCommand}"/>
+                <MenuItem Header="Open in Explorer" Command="{Binding OpenFolderInExplorerCommand}"/>
             </MenuItem>
 
             <MenuItem Header="_Image">
@@ -39,7 +40,7 @@
                 <MenuItem Header="Next" Command="{Binding ViewNextImageCommand}"/>
                 <MenuItem Header="Previous" Command="{Binding ViewPreviousImageCommand}"/>
                 <MenuItem Header="Path" Command="{Binding ShowImagePathCommand}"/>
-                <MenuItem Header="Show in Folder" Command="{Binding ShowImageInFolderCommand}"/>
+                <MenuItem Header="Show in Explorer" Command="{Binding ShowImageInFolderCommand}"/>
                 <MenuItem Header="Delete" Command="{Binding DeleteSelectedImageCommand}"/>
             </MenuItem>
 

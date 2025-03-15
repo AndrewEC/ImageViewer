@@ -117,8 +117,10 @@ public class ImagePreviewViewModel : ReactiveObject
 
         await MessageBoxManager.GetMessageBoxStandard(
             "Slideshow.",
-            "Use the space key to stop the slideshow at any time.",
+            "Use the escape key to stop the slideshow at any time.",
             ButtonEnum.Ok).ShowAsync();
+
+        appState.SelectedTab = AvailableTabs.ImagePreview;
 
         slideshowTimer = new DispatcherTimer(
             TimeSpan.FromMilliseconds(2000),
@@ -155,11 +157,6 @@ public class ImagePreviewViewModel : ReactiveObject
     /// </summary>
     public void ViewNextImage()
     {
-        if (IsSlideshowRunning)
-        {
-            return;
-        }
-
         logger.Log("Navigating to next image.");
         if (!ChangeActiveImage((index) => index + 1))
         {
@@ -174,11 +171,6 @@ public class ImagePreviewViewModel : ReactiveObject
     /// </summary>
     public void ViewPreviousImage()
     {
-        if (IsSlideshowRunning)
-        {
-            return;
-        }
-
         logger.Log("Navigating to previous image.");
         if (!ChangeActiveImage((index) => index - 1))
         {

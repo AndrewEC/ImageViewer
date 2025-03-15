@@ -11,7 +11,7 @@
 
     <DockPanel DockPanel.Dock="Bottom">
 
-        <TextBlock Text="{Binding SelectedFolder.DisplayName}"
+        <TextBlock Text="{Binding SelectedFolder.AbsolutePath}"
             Classes="FolderDisplayNameText"
             DockPanel.Dock="Top"/>
 

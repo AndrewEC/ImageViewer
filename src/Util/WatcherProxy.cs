@@ -90,7 +90,7 @@ internal sealed class WatcherProxy(AppStateProperties appState)
                 logger.Log("Path points to an image but is not in currently selected folder. Nothing will be re-scanned.");
             }
         }
-        else if (WasFolderInRootFolder(fullPath))
+        else if (Directory.Exists(fullPath))
         {
             logger.Log("Path points to a folder within root folder. Rescanning root folder.");
             appState.RescanRootFolder();
@@ -122,16 +122,6 @@ internal sealed class WatcherProxy(AppStateProperties appState)
     }
 
     private bool WasFolder(string path) => appState.Folders.Any(folder => folder.AbsolutePath == path);
-
-    private bool WasFolderInRootFolder(string path)
-    {
-        if (appState.SelectedRootFolder == null)
-        {
-            return false;
-        }
-
-        return PathLookup.DoWindowsPathsMatch(appState.SelectedRootFolder, Path.GetDirectoryName(path));
-    }
 
     private bool WasImageInCurrentlySelectedFolder(string path)
     {
