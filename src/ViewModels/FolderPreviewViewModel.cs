@@ -1,6 +1,5 @@
 namespace ImageViewer.ViewModels;
 
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -27,7 +26,13 @@ public class FolderPreviewViewModel : ReactiveObject
     public FolderPreviewViewModel(AppStateProperties appState)
     {
         this.appState = appState;
-        appState.PropertyChanged += OnAppStateChanged;
+        appState.PropertyChanged += HelperExtensions.CreatePropertyChangeConsumer(
+            appState,
+            new()
+            {
+                { nameof(appState.Images), () => Images = appState.Images },
+                { nameof(appState.SelectedFolder), () => SelectedFolder = appState.SelectedFolder },
+            });
 
         ViewImageCommand = ReactiveCommand.Create<string, Task>(ViewImage);
     }
@@ -79,23 +84,5 @@ public class FolderPreviewViewModel : ReactiveObject
 
         appState.SelectedImage = image;
         appState.SelectedTab = AvailableTabs.ImagePreview;
-    }
-
-    private void OnAppStateChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (sender != appState)
-        {
-            return;
-        }
-
-        switch (e.PropertyName)
-        {
-            case nameof(appState.Images):
-                Images = appState.Images;
-                break;
-            case nameof(appState.SelectedFolder):
-                SelectedFolder = appState.SelectedFolder;
-                break;
-        }
     }
 }

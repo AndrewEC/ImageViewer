@@ -1,6 +1,5 @@
 namespace ImageViewer.ViewModels;
 
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -30,8 +29,15 @@ public class FolderListViewModel : ReactiveObject
     public FolderListViewModel(AppStateProperties appState)
     {
         this.appState = appState;
-        appState.PropertyChanged += OnAppStateChanged;
+
         SelectFolderCommand = ReactiveCommand.Create<string, Task>(SelectFolder);
+
+        appState.PropertyChanged += HelperExtensions.CreatePropertyChangeConsumer(
+            appState,
+            new()
+            {
+                { nameof(appState.Folders), () => Folders = appState.Folders },
+            });
     }
 
     /// <summary>
@@ -75,20 +81,5 @@ public class FolderListViewModel : ReactiveObject
 
         appState.SelectedFolder = folder;
         appState.SelectedTab = AvailableTabs.FolderPreview;
-    }
-
-    private void OnAppStateChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (sender != appState)
-        {
-            return;
-        }
-
-        switch (e.PropertyName)
-        {
-            case nameof(appState.Folders):
-                Folders = appState.Folders;
-                break;
-        }
     }
 }

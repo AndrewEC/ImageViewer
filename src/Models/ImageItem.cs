@@ -1,8 +1,8 @@
 namespace ImageViewer.Models;
 
-using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using ImageViewer.Util;
 
 /// <summary>
 /// Represents the details of a sigle image within a selected sub-folder.
@@ -26,12 +26,7 @@ public sealed class ImageItem(string absolutePath) : IFindable
     /// <summary>
     /// Gets a thumbnail of the image. Sized to be no-more than 200 pixels in width.
     /// </summary>
-    public Task<Bitmap> Thumbnail { get; }
-        = Task.Run(() =>
-        {
-            MemoryStream stream = new(File.ReadAllBytes(absolutePath));
-            return Bitmap.DecodeToWidth(stream, 200, BitmapInterpolationMode.LowQuality);
-        });
+    public Task<Bitmap> Thumbnail { get; } = ThumbnailCache.Instance.LoadThumbnail(absolutePath);
 
     /// <summary>
     /// Stringifies this image item instance.

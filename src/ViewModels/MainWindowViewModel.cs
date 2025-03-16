@@ -1,6 +1,5 @@
 ﻿namespace ImageViewer.ViewModels;
 
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -31,9 +30,16 @@ public partial class MainWindowViewModel : ReactiveObject
     /// </summary>
     public MainWindowViewModel()
     {
-        appState.PropertyChanged += OnAppStateChanged;
-
         watcherProxy = new(appState);
+
+        appState.PropertyChanged += HelperExtensions.CreatePropertyChangeConsumer(
+            appState,
+            new()
+            {
+                { nameof(appState.SelectedTab), () => SelectedTabIndex = (int)appState.SelectedTab },
+                { nameof(appState.SelectedRootFolder), () => watcherProxy.StartFileSystemWatcher(appState.SelectedRootFolder) },
+                { nameof(appState.IsSlideshowRunning), () => IsSlideshowRunning = appState.IsSlideshowRunning },
+            });
 
         ImagePreviewDataContext = new(appState);
         FolderPreviewDataContext = new(appState);
@@ -190,27 +196,6 @@ public partial class MainWindowViewModel : ReactiveObject
         }
 
         return Path.GetFullPath(arguments[0]);
-    }
-
-    private void OnAppStateChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (sender != appState)
-        {
-            return;
-        }
-
-        switch (e.PropertyName)
-        {
-            case nameof(appState.SelectedTab):
-                SelectedTabIndex = (int)appState.SelectedTab;
-                break;
-            case nameof(appState.SelectedRootFolder):
-                watcherProxy.StartFileSystemWatcher(appState.SelectedRootFolder);
-                break;
-            case nameof(appState.IsSlideshowRunning):
-                IsSlideshowRunning = appState.IsSlideshowRunning;
-                break;
-        }
     }
 
     private async void ShowImagePath()

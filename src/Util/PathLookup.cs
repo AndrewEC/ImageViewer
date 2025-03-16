@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using ImageViewer.Models;
+using ImageViewer.ViewModels;
 
 /// <summary>
 /// A static utility class to help lookup folders and images in
@@ -43,6 +44,9 @@ public static class PathLookup
             .Select(Path.GetFullPath)
             .ToArray();
     }
+
+    public static bool IsFolderValid(string? directory)
+        => GetSupportedImagesInFolder(directory).Length > 0;
 
     /// <summary>
     /// Gets an array of all the folders that exist within the input path. If the input

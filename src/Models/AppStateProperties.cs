@@ -53,7 +53,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
                 return;
             }
 
-            SelectedFolder = ReselectItem(Folders, SelectedFolder);
+            SelectedFolder = SelectBestFit(Folders, SelectedFolder);
         }
     }
 
@@ -93,7 +93,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         {
             if (UpdateIfChanged(nameof(Images), ref images, value))
             {
-                SelectedImage = ReselectItem(Images, SelectedImage);
+                SelectedImage = SelectBestFit(Images, SelectedImage);
 
                 // If there are no more mages in this folder then rescanning the root
                 // folder will remove the previous of this now empty folder.
@@ -171,16 +171,13 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         Folders = PathLookup.GetValidSubFolders(SelectedRootFolder);
     }
 
-    private static T? ReselectItem<T>(T[] elements, T? previouslySelected)
+    private static T SelectBestFit<T>(T[] elements, T? previouslySelected)
     where T : class, IFindable
     {
-        if (previouslySelected == null)
-        {
-            return null;
-        }
+        string previouslySelectedPath = previouslySelected?.AbsolutePath ?? string.Empty;
 
-        return elements.Where(element => element.AbsolutePath == previouslySelected.AbsolutePath)
-            .FirstOrDefault();
+        return elements.Where(element => element.AbsolutePath == previouslySelectedPath)
+            .FirstOrDefault() ?? elements.First();
     }
 
     private bool UpdateIfChanged<T>(string propName, ref T currentValue, T nextValue)

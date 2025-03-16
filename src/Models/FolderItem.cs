@@ -1,8 +1,8 @@
 namespace ImageViewer.Models;
 
-using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using ImageViewer.Util;
 
 /// <summary>
 /// Represents a single folder within the user's selected root folder.
@@ -31,12 +31,7 @@ public sealed class FolderItem(string absolutePath, string displayName, string p
     /// Gets a thumbnail of the first image in the folder. Sized so the width
     /// is 200 pixels in size.
     /// </summary>
-    public Task<Bitmap> PreviewImage { get; }
-        = Task.Run(() =>
-        {
-            MemoryStream stream = new(File.ReadAllBytes(previewImagePath));
-            return Bitmap.DecodeToWidth(stream, 200, BitmapInterpolationMode.LowQuality);
-        });
+    public Task<Bitmap> PreviewImage { get; } = ThumbnailCache.Instance.LoadThumbnail(previewImagePath);
 
     /// <summary>
     /// Stringifies this folder item instance.

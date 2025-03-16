@@ -32,7 +32,13 @@ public class ImagePreviewViewModel : ReactiveObject
     public ImagePreviewViewModel(AppStateProperties appState)
     {
         this.appState = appState;
-        appState.PropertyChanged += OnAppStateChanged;
+        appState.PropertyChanged += HelperExtensions.CreatePropertyChangeConsumer(
+            appState,
+            new()
+            {
+                { nameof(appState.SelectedImage), () => SelectedImage = appState.SelectedImage },
+                { nameof(appState.IsSlideshowRunning), () => IsSlideshowRunning = appState.IsSlideshowRunning },
+            });
 
         ViewNextImageCommand = ReactiveCommand.Create(ViewNextImage);
         ViewPreviousImageCommand = ReactiveCommand.Create(ViewPreviousImage);
@@ -358,23 +364,5 @@ public class ImagePreviewViewModel : ReactiveObject
         logger.Log($"Found folder that either doesn't exist or contains no images at [{folder.AbsolutePath}]");
 
         return SearchForValidFolder(indexMapper(currentIndex), indexMapper, ++recursiveDepth);
-    }
-
-    private void OnAppStateChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (sender != appState)
-        {
-            return;
-        }
-
-        switch (e.PropertyName)
-        {
-            case nameof(appState.SelectedImage):
-                SelectedImage = appState.SelectedImage;
-                break;
-            case nameof(appState.IsSlideshowRunning):
-                IsSlideshowRunning = appState.IsSlideshowRunning;
-                break;
-        }
     }
 }

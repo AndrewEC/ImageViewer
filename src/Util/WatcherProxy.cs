@@ -26,7 +26,7 @@ internal sealed class WatcherProxy(AppStateProperties appState)
     /// changes on.</param>
     public void StartFileSystemWatcher(string? rootFolder)
     {
-        logger.Log("Starting file system water.");
+        logger.Log("Starting file system watcher.");
         if (rootFolder == null)
         {
             if (watcher == null)
