@@ -45,6 +45,12 @@ public static class PathLookup
             .ToArray();
     }
 
+    /// <summary>
+    /// Checks if the folder is considerd "valid". A folder is valid if it directly
+    /// contains at least one image with a supported format.
+    /// </summary>
+    /// <param name="directory">The directory to check.</param>
+    /// <returns>True if the directory contains at least one valid image. Otherwise, false.</returns>
     public static bool IsFolderValid(string? directory)
         => GetSupportedImagesInFolder(directory).Length > 0;
 

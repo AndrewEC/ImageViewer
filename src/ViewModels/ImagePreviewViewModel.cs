@@ -255,114 +255,114 @@ public class ImagePreviewViewModel : ReactiveObject
             return false;
         }
 
-        ImageItem? nextImage = SearchForValidImage(indexMapper.Invoke(index), indexMapper, 0);
-
-        if (nextImage != null)
+        for (int i = 0; i < 10; i++)
         {
-            appState.SelectedImage = nextImage;
+            ImageItem? nextImage = GetNextImageInSelectedFolder(index, indexMapper);
+            if (nextImage != null)
+            {
+                appState.SelectedImage = nextImage;
+                return true;
+            }
+
+            FolderItem? nextFolder = GetNextFolder(indexMapper);
+            if (nextFolder != null)
+            {
+                appState.SelectedFolder = nextFolder;
+                if (indexMapper.Invoke(0) < 0)
+                {
+                    // The indexMapper is subtracting.
+                    index = appState.Images.Length;
+                }
+                else
+                {
+                    // The indexMapper is adding.
+                    index = -1;
+                }
+            }
+            else
+            {
+                break;
+            }
         }
 
-        return nextImage != null;
+        return false;
     }
 
-    // Assumption is that at least one folder from the appState.Images array will
-    // be valid. Therefore, no check for infinite recursion will be done.
-    private ImageItem? SearchForValidImage(int currentIndex, Func<int, int> indexMapper, int recursiveDepth)
+    private ImageItem? GetNextImageInSelectedFolder(int startIndex, Func<int, int> indexMapper)
     {
-        if (recursiveDepth > 50)
-        {
-            logger.Log("Search for image failed. Reached max recursive depth.");
-            return null;
-        }
+        logger.Log($"Looking for next image starting from index [{startIndex}] "
+            + $"in folder [{appState.SelectedFolder?.AbsolutePath}].");
 
-        if (currentIndex < 0)
+        int currentIndex = startIndex;
+        while ((currentIndex = indexMapper.Invoke(currentIndex)) != startIndex)
         {
-            logger.Log("Reached beginning image array in selected folder.");
-            if (!ChangeActiveFolder(indexMapper))
+            if (currentIndex < 0)
             {
+                logger.Log("Reached beginning of image array in selected folder.");
+                return null;
+            }
+            else if (currentIndex >= appState.Images.Length)
+            {
+                logger.Log("Reached end of image array in selected folder.");
                 return null;
             }
 
-            return SearchForValidImage(appState.Images.Length - 1, indexMapper, ++recursiveDepth);
-        }
-        else if (currentIndex >= appState.Images.Length)
-        {
-            logger.Log("Reached end of image array in selected folder.");
-            if (!ChangeActiveFolder(indexMapper))
+            ImageItem image = appState.Images[currentIndex];
+            if (File.Exists(image.AbsolutePath))
             {
-                return null;
+                logger.Log($"Found image at path [{image}].");
+                return image;
             }
 
-            return SearchForValidImage(0, indexMapper, ++recursiveDepth);
+            logger.Log($"Found image that no longer exists at path [{image.AbsolutePath}].");
         }
 
-        ImageItem image = appState.Images[currentIndex];
-        if (File.Exists(image.AbsolutePath))
-        {
-            return image;
-        }
-
-        logger.Log($"Found image item that no longer exists at path [{image.AbsolutePath}].");
-
-        return SearchForValidImage(indexMapper.Invoke(currentIndex), indexMapper, ++recursiveDepth);
+        return null;
     }
 
-    private bool ChangeActiveFolder(Func<int, int> indexMapper)
+    private FolderItem? GetNextFolder(Func<int, int> indexMapper)
     {
-        logger.Log("Changing selected folder.");
-        if (appState.SelectedFolder == null)
+        logger.Log("Getting next available folder.");
+        if (appState.SelectedFolder == null || appState.Folders.Length < 2)
         {
-            logger.Log("Could not change selected folder because no folder is currently selected.");
-            return false;
-        }
-
-        int index = Array.IndexOf(appState.Folders, appState.SelectedFolder);
-        if (!appState.Folders.IsValidIndex(index))
-        {
-            logger.Log($"Could not find index of current folder. Index lookup return [{index}].");
-            return false;
-        }
-
-        FolderItem? nextFolder = SearchForValidFolder(indexMapper.Invoke(index), indexMapper, 0);
-        if (nextFolder == null)
-        {
-            return false;
-        }
-
-        appState.SelectedFolder = nextFolder;
-        return true;
-    }
-
-    // Assumption is that at least one folder from the appState.Folders array will
-    // be valid. Therefore, no check for infinite recursion will be done.
-    private FolderItem? SearchForValidFolder(int currentIndex, Func<int, int> indexMapper, int recursiveDepth)
-    {
-        if (recursiveDepth > 50)
-        {
-            logger.Log("Search for folder failed. Reached max recursive depth.");
+            logger.Log("Could not change selected folder because no folder "
+                + "is currently selected or there are no more folders to traverse.");
             return null;
         }
 
-        if (currentIndex < 0)
+        int startingIndex = Array.IndexOf(appState.Folders, appState.SelectedFolder);
+        if (!appState.Folders.IsValidIndex(startingIndex))
         {
-            logger.Log("Reached beginning of first folder in folders array.");
-            return SearchForValidFolder(appState.Folders.Length - 1, indexMapper, ++recursiveDepth);
-        }
-        else if (currentIndex >= appState.Folders.Length)
-        {
-            logger.Log("Reached end of last folder in folders array.");
-            return SearchForValidFolder(0, indexMapper, ++recursiveDepth);
+            logger.Log($"Could not find index of current folder. Index lookup return [{startingIndex}].");
+            return null;
         }
 
-        FolderItem folder = appState.Folders[currentIndex];
-        if (PathLookup.GetSupportedImagesInFolder(folder.AbsolutePath).Length > 0)
+        int nextIndex = startingIndex;
+        while ((nextIndex = indexMapper.Invoke(nextIndex)) != startingIndex)
         {
-            logger.Log($"Found value folder at path [{folder.AbsolutePath}].");
-            return folder;
+            if (nextIndex < 0)
+            {
+                logger.Log("Reached beginning of folders array.");
+                nextIndex = appState.Folders.Length - 1;
+            }
+            else if (nextIndex >= appState.Folders.Length)
+            {
+                logger.Log("Reached end of folders array.");
+                nextIndex = 0;
+            }
+
+            FolderItem folder = appState.Folders[nextIndex];
+            if (PathLookup.GetSupportedImagesInFolder(folder.AbsolutePath).Length > 0)
+            {
+                logger.Log($"Found folder at path [{folder.AbsolutePath}].");
+                return folder;
+            }
+
+            logger.Log($"Found folder that either doesn't exist or contains no images at [{folder.AbsolutePath}]");
         }
 
-        logger.Log($"Found folder that either doesn't exist or contains no images at [{folder.AbsolutePath}]");
+        logger.Log("No next folder could be found that is valid.");
 
-        return SearchForValidFolder(indexMapper(currentIndex), indexMapper, ++recursiveDepth);
+        return null;
     }
 }
