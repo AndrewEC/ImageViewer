@@ -1,10 +1,13 @@
 namespace ImageViewer.Models;
 
+using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using ImageViewer.Log;
 using ImageViewer.Util;
+using ImageViewer.ViewModels;
 
 /// <summary>
 /// A global state container containing all shared properties of the app.
@@ -32,23 +35,23 @@ public sealed class AppStateProperties : INotifyPropertyChanged
                 return;
             }
 
-            RescanRootFolder();
+            Folders = PathLookup.RecursivelyFindSubFolders(SelectedRootFolder, SelectedRootFolder);
         }
     }
 
     private FolderItem[] folders = [];
 
     /// <summary>
-    /// Gets or sets the list of folders that are nested under the
-    /// <see cref="SelectedRootFolder"/>. Upon being updated this
-    /// will set the <see cref="SelectedFolder"/> to null.
+    /// Gets the list of folders that are nested under the
+    /// <see cref="SelectedRootFolder"/>.
     /// </summary>
     public FolderItem[] Folders
     {
         get => folders;
-        set
+        private set
         {
-            if (!UpdateIfChanged(nameof(Folders), ref folders, value))
+            FolderItem[] sorted = value.OrderBy(folder => folder.AbsolutePath).ToArray();
+            if (!UpdateIfChanged(nameof(Folders), ref folders, sorted))
             {
                 return;
             }
@@ -76,31 +79,39 @@ public sealed class AppStateProperties : INotifyPropertyChanged
                 return;
             }
 
-            RescanSelectedFolder();
+            SelectedFolderIndex = Array.IndexOf(Folders, value);
+            Images = PathLookup.GetSupportedImagesInFolder(SelectedFolder?.AbsolutePath)
+                .Select(file => new ImageItem(file))
+                .ToArray();
         }
+    }
+
+    private int selectedFolderIndex = -1;
+
+    /// <summary>
+    /// Gets the index within the <see cref="Folders"/> array
+    /// of the <see cref="SelectedFolder"/>.
+    /// </summary>
+    public int SelectedFolderIndex
+    {
+        get => selectedFolderIndex;
+        private set => UpdateIfChanged(nameof(SelectedFolderIndex), ref selectedFolderIndex, value);
     }
 
     private ImageItem[] images = [];
 
     /// <summary>
-    /// Gets or sets the array of images the user can pick from. Upon updating
-    /// this will set the <see cref="SelectedImage"/> property to null.
+    /// Gets the array of images the user can pick from.
     /// </summary>
     public ImageItem[] Images
     {
         get => images;
-        set
+        private set
         {
-            if (UpdateIfChanged(nameof(Images), ref images, value))
+            ImageItem[] sorted = value.OrderBy(image => image.AbsolutePath).ToArray();
+            if (UpdateIfChanged(nameof(Images), ref images, sorted))
             {
                 SelectedImage = SelectBestFit(Images, SelectedImage);
-
-                // If there are no more mages in this folder then rescanning the root
-                // folder will remove the previous of this now empty folder.
-                if (Images.Length == 0)
-                {
-                    RescanRootFolder();
-                }
             }
         }
     }
@@ -114,7 +125,27 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     public ImageItem? SelectedImage
     {
         get => selectedImage;
-        set => UpdateIfChanged(nameof(SelectedImage), ref selectedImage, value);
+        set
+        {
+            if (!UpdateIfChanged(nameof(SelectedImage), ref selectedImage, value))
+            {
+                return;
+            }
+
+            SelectedImageIndex = Array.IndexOf(Images, value);
+        }
+    }
+
+    private int selectedImageIndex = -1;
+
+    /// <summary>
+    /// Gets the index within the <see cref="Images"/> array of the
+    /// <see cref="SelectedImage"/>.
+    /// </summary>
+    public int SelectedImageIndex
+    {
+        get => selectedImageIndex;
+        private set => UpdateIfChanged(nameof(SelectedImageIndex), ref selectedImageIndex, value);
     }
 
     private AvailableTabs selectedTab = AvailableTabs.FolderList;
@@ -149,26 +180,72 @@ public sealed class AppStateProperties : INotifyPropertyChanged
 #pragma warning restore SA1201
 
     /// <summary>
-    /// Scans the currently selected root folder and updates the <see cref="Images"/>
-    /// property with the images found in the folder. If no folder is currently selected
-    /// the <see cref="Images"/> property will default to an empty array.
+    /// Adds a folder with the specified path to the existing
+    /// <see cref="Folders"/> array. This will also recursively lookup
+    /// and add any nested folders.
     /// </summary>
-    public void RescanSelectedFolder()
+    /// <param name="path">The absolute path to the folder being added.</param>
+    public void AddFolder(string path)
     {
-        Images = PathLookup.GetSupportedImagesInFolder(SelectedFolder?.AbsolutePath)
-            .Select(file => new ImageItem(file))
+        FolderItem[] newFolders = PathLookup.RecursivelyFindSubFolders(path, SelectedRootFolder, true);
+        Folders = [.. newFolders, .. Folders];
+    }
+
+    /// <summary>
+    /// Adds an image to the current <see cref="Images"/> array. This will add the image
+    /// if the image is a direct child of the <see cref="SelectedFolder"/>.
+    /// </summary>
+    /// <param name="path">The absolute path to the image to add.</param>
+    public void AddImage(string path)
+    {
+        string? parentFolder = Path.GetDirectoryName(path);
+        if (parentFolder == null || SelectedFolder?.AbsolutePath != parentFolder)
+        {
+            return;
+        }
+
+        Images = [.. Images, new ImageItem(path)];
+    }
+
+    /// <summary>
+    /// Removes a folder item with an absolute path matching the input path
+    /// from the current <see cref="Folders"/> array. This will also remove any
+    /// nested folders if any are present. This will have no affect if the path
+    /// does not match any folder in the <see cref="Folders"/> array.
+    /// </summary>
+    /// <param name="path">The absolute path to the folder to remove.</param>
+    public void RemoveFolder(string? path)
+    {
+        FolderItem? toRemove = Folders.Where(folder => folder.AbsolutePath == path).FirstOrDefault();
+        if (toRemove == null)
+        {
+            return;
+        }
+
+        string[] childFolderPaths = Folders.Select(folder => folder.AbsolutePath)
+            .Where(path => path.StartsWith(toRemove.AbsolutePath))
+            .ToArray();
+
+        string[] removableFolderPaths = [.. childFolderPaths, toRemove.AbsolutePath];
+
+        Folders = Folders.Where(folder => !removableFolderPaths.Contains(folder.AbsolutePath))
             .ToArray();
     }
 
     /// <summary>
-    /// Scans the currently selected root folder for all nested folders and sets the
-    /// <see cref="Folders"/> property. This search is not recursive. If no root
-    /// folder is currently selected the <see cref="Folders"/> will be set to an empty
-    /// array.
+    /// Removes an image with a matching absolute path from the current
+    /// <see cref="Images"/> array.
     /// </summary>
-    public void RescanRootFolder()
+    /// <param name="path">The absolute path to the image to be removed.</param>
+    public void RemoveImage(string? path)
     {
-        Folders = PathLookup.GetValidSubFolders(SelectedRootFolder);
+        ImageItem[] updated = Images.Where(image => image.AbsolutePath != path).ToArray();
+        if (updated.Length == Images.Length)
+        {
+            return;
+        }
+
+        Images = updated;
     }
 
     private static T SelectBestFit<T>(T[] elements, T? previouslySelected)
@@ -183,12 +260,14 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     private bool UpdateIfChanged<T>(string propName, ref T currentValue, T nextValue)
     {
         logger.Log($"Attempt to change property [{propName}]");
-        if ((currentValue == null && nextValue == null) || (currentValue?.Equals(nextValue) ?? false))
+        if (HelperExtensions.AreRoughlyEqual(currentValue, nextValue))
         {
             return false;
         }
 
-        logger.Log($"Property [{propName}] changed from [{currentValue}] to [{nextValue}].");
+        logger.Log($"Property [{propName}] changed from "
+            + $"[{HelperExtensions.Stringify(currentValue)}] "
+            + $"to [{HelperExtensions.Stringify(nextValue)}].");
 
         currentValue = nextValue;
         PropertyChanged?.Invoke(this, new(propName));

@@ -248,16 +248,10 @@ public class ImagePreviewViewModel : ReactiveObject
             return false;
         }
 
-        int index = Array.IndexOf(appState.Images, SelectedImage);
-        if (!appState.Images.IsValidIndex(index))
-        {
-            logger.Log($"Could not find index of current image. Index lookup return [{index}].");
-            return false;
-        }
-
+        int startingIndex = appState.SelectedImageIndex;
         for (int i = 0; i < 10; i++)
         {
-            ImageItem? nextImage = GetNextImageInSelectedFolder(index, indexMapper);
+            ImageItem? nextImage = GetNextImageInSelectedFolder(startingIndex, indexMapper);
             if (nextImage != null)
             {
                 appState.SelectedImage = nextImage;
@@ -271,12 +265,12 @@ public class ImagePreviewViewModel : ReactiveObject
                 if (indexMapper.Invoke(0) < 0)
                 {
                     // The indexMapper is subtracting.
-                    index = appState.Images.Length;
+                    startingIndex = appState.Images.Length;
                 }
                 else
                 {
                     // The indexMapper is adding.
-                    index = -1;
+                    startingIndex = -1;
                 }
             }
             else
@@ -330,12 +324,7 @@ public class ImagePreviewViewModel : ReactiveObject
             return null;
         }
 
-        int startingIndex = Array.IndexOf(appState.Folders, appState.SelectedFolder);
-        if (!appState.Folders.IsValidIndex(startingIndex))
-        {
-            logger.Log($"Could not find index of current folder. Index lookup return [{startingIndex}].");
-            return null;
-        }
+        int startingIndex = appState.SelectedFolderIndex;
 
         int nextIndex = startingIndex;
         while ((nextIndex = indexMapper.Invoke(nextIndex)) != startingIndex)

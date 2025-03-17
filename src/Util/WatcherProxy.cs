@@ -1,5 +1,6 @@
 namespace ImageViewer.Util;
 
+using System;
 using System.IO;
 using System.Linq;
 using ImageViewer.Log;
@@ -82,27 +83,44 @@ internal sealed class WatcherProxy(AppStateProperties appState)
         {
             if (WasImageInCurrentlySelectedFolder(fullPath))
             {
-                logger.Log("Path points to image in currently selected folder. Rescanning currently selected folder.");
-                appState.RescanSelectedFolder();
+                logger.Log("Path points to image in currently selected folder. Adding image.");
+                appState.AddImage(fullPath);
             }
             else
             {
-                logger.Log("Path points to an image but is not in currently selected folder. Nothing will be re-scanned.");
+                logger.Log("Path points to an image but is not in currently selected folder. No changes to apply.");
             }
         }
         else if (Directory.Exists(fullPath))
         {
-            logger.Log("Path points to a folder within root folder. Rescanning root folder.");
-            appState.RescanRootFolder();
+            logger.Log("Path points to a folder within root folder. Adding folder.");
+            appState.AddFolder(fullPath);
         }
     }
 
     private void HandlePathRenamed(string fullPath)
     {
         logger.Log($"Detected path renamed to [{fullPath}].");
+
         if (Directory.Exists(fullPath))
         {
-            appState.RescanRootFolder();
+            FolderItem? oldFolder = GetFolderThatWasRenamed();
+            if (oldFolder != null)
+            {
+                appState.RemoveFolder(oldFolder.AbsolutePath);
+            }
+
+            appState.AddFolder(fullPath);
+        }
+        else if (File.Exists(fullPath))
+        {
+            ImageItem? oldImage = GetImageThatWasRenamed();
+            if (oldImage != null)
+            {
+                appState.RemoveImage(oldImage.AbsolutePath);
+            }
+
+            appState.AddImage(fullPath);
         }
     }
 
@@ -111,31 +129,31 @@ internal sealed class WatcherProxy(AppStateProperties appState)
         logger.Log($"Detected path was deleted from [{fullPath}].");
         if (WasFolder(fullPath))
         {
-            logger.Log("Deleted path appears to have been a folder. Rescanning root folder.");
-            appState.RescanRootFolder();
+            logger.Log("Deleted path appears to have been a folder. Removing folder from available array.");
+            appState.RemoveFolder(fullPath);
         }
         else if (WasImageInCurrentlySelectedFolder(fullPath))
         {
-            logger.Log("Deleted path appears to have been an image in currently selected folder. Rescanning currently selected folder.");
-            appState.RescanSelectedFolder();
+            logger.Log("Deleted path appears to have been an image in currently selected folder. Removing image from available array.");
+            appState.RemoveImage(fullPath);
         }
     }
 
-    private bool WasFolder(string path) => appState.Folders.Any(folder => folder.AbsolutePath == path);
+    private bool WasFolder(string path) => appState.Folders
+        .Any(folder => folder.AbsolutePath == path);
+
+    private ImageItem? GetImageThatWasRenamed() => appState.Images
+        .Where(image => !File.Exists(image.AbsolutePath))
+        .FirstOrDefault();
+
+    private FolderItem? GetFolderThatWasRenamed() => appState.Folders
+        .Where(folder => !Directory.Exists(folder.AbsolutePath))
+        .FirstOrDefault();
 
     private bool WasImageInCurrentlySelectedFolder(string path)
     {
-        if (appState.SelectedFolder == null)
-        {
-            return false;
-        }
-
         string? parentFolder = Path.GetDirectoryName(path);
-        if (parentFolder == null)
-        {
-            return false;
-        }
-
-        return appState.SelectedFolder.AbsolutePath == parentFolder;
+        return parentFolder != null
+            && appState.SelectedFolder?.AbsolutePath == parentFolder;
     }
 }
