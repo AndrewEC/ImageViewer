@@ -1,11 +1,10 @@
 namespace ImageViewer.ViewModels;
 
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using ImageViewer.Log;
 using ImageViewer.Models;
+using ImageViewer.Util;
 using ImageViewer.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
@@ -56,7 +55,7 @@ public class FolderListViewModel : ReactiveObject
     }
 
     /// <summary>
-    /// Attempts to lookup and set the currently selected folder to the folder
+    /// Attempts to look up and set the currently selected folder to the folder
     /// whose absolute path matches the input absolute path.
     /// </summary>
     /// <param name="folderPath">The absolute path to the folder the user selected.</param>
@@ -65,8 +64,9 @@ public class FolderListViewModel : ReactiveObject
     {
         logger.Log($"Selecting folder from path [{folderPath}]");
 
-        FolderItem? folder = Folders.Where(folder => folder.AbsolutePath == folderPath).FirstOrDefault();
-        if (folder == null || !Directory.Exists(folder.AbsolutePath))
+        FolderItem? folder = Folders.FirstByPath(new PathLike(folderPath));
+        logger.Log($"Found folder [{folder?.DisplayName}]");
+        if (!(folder?.Path.IsDirectory() ?? false))
         {
             logger.Log("The specified folder can no longer be found.");
             await MessageBoxManager.GetMessageBoxStandard(

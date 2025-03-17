@@ -1,10 +1,9 @@
 namespace ImageViewer.ViewModels;
 
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using ImageViewer.Models;
+using ImageViewer.Util;
 using ImageViewer.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
@@ -72,8 +71,8 @@ public class FolderPreviewViewModel : ReactiveObject
     /// <returns>An async task.</returns>
     public async Task ViewImage(string imagePath)
     {
-        ImageItem? image = Images.Where(image => image.AbsolutePath == imagePath).FirstOrDefault();
-        if (image == null || !File.Exists(image.AbsolutePath))
+        ImageItem? image = Images.FirstByPath(new PathLike(imagePath));
+        if (!(image?.Path.IsFile() ?? false))
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Image not found.",

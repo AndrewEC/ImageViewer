@@ -12,7 +12,7 @@
     <DockPanel>
 
         <ScrollViewer DockPanel.Dock="Bottom">
-            <ItemsControl ItemsSource="{Binding Folders}" Name="folderItemsControl">
+            <ItemsControl ItemsSource="{Binding Folders}" Name="FolderItemsControl">
 
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -27,8 +27,8 @@
                                 <Image Classes="PreviewImage" Source="{Binding PreviewImage^}"/>
                                 <Button
                                     Content="{Binding DisplayName}"
-                                    Command="{Binding #folderItemsControl.((viewmodel:FolderListViewModel)DataContext).SelectFolderCommand}"
-                                    CommandParameter="{Binding AbsolutePath}"
+                                    Command="{Binding #FolderItemsControl.((viewmodel:FolderListViewModel)DataContext).SelectFolderCommand}"
+                                    CommandParameter="{Binding Path.PathString}"
                                     Classes="FolderSelectButton"/>
                             </StackPanel>
                         </Border>

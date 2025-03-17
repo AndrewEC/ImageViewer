@@ -181,26 +181,26 @@ public partial class MainWindowViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref isSlideshowRunning, value);
     }
 
-    private static string GetStartPathFromLaunchArguments()
+    private static PathLike GetStartPathFromLaunchArguments()
     {
         if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
         {
-            return string.Empty;
+            return PathLike.Empty();
         }
 
         string[]? arguments = desktop.Args;
 
         if (arguments == null || arguments.Length != 1 || !Path.IsPathFullyQualified(arguments[0]))
         {
-            return string.Empty;
+            return PathLike.Empty();
         }
 
-        return Path.GetFullPath(arguments[0]);
+        return new PathLike(arguments[0]);
     }
 
     private async void ShowImagePath()
     {
-        logger.Log("Showing path to currently selected.");
+        logger.Log("Showing path to currently selected image.");
         if (appState.SelectedImage == null)
         {
             logger.Log("Cannot show path to currently selected image because no image has been selected.");
@@ -209,13 +209,13 @@ public partial class MainWindowViewModel : ReactiveObject
 
         await MessageBoxManager.GetMessageBoxStandard(
                 "Image Path",
-                appState.SelectedImage.AbsolutePath,
+                appState.SelectedImage.Path.PathString,
                 ButtonEnum.Ok).ShowAsync();
     }
 
     private void ShowImageInFolder()
     {
-        logger.Log("Showing currently selected image in folder.");
+        logger.Log("Showing currently selected image in explorer.");
         if (appState.SelectedImage == null)
         {
             logger.Log("Selected image cannot be shown because no image has been selected.");
@@ -224,7 +224,7 @@ public partial class MainWindowViewModel : ReactiveObject
 
         appState.SelectedTab = AvailableTabs.ImagePreview;
 
-        string imagePath = appState.SelectedImage.AbsolutePath.Replace("/", "\\");
+        string imagePath = appState.SelectedImage.Path.PathString.Replace("/", "\\");
         string arguments = $"/select,\"{imagePath}\"";
         logger.Log($"Starting explorer process with arguments [{arguments}]");
         Process.Start("explorer.exe", arguments);
@@ -241,8 +241,8 @@ public partial class MainWindowViewModel : ReactiveObject
 
         appState.SelectedTab = AvailableTabs.FolderPreview;
 
-        logger.Log($"Opening folder [{appState.SelectedFolder.AbsolutePath}].");
-        Process.Start("explorer.exe", appState.SelectedFolder.AbsolutePath);
+        logger.Log($"Opening folder [{appState.SelectedFolder.Path.PathString}].");
+        Process.Start("explorer.exe", appState.SelectedFolder.Path.PathString);
     }
 
     private async void OpenRootFolder()
@@ -255,7 +255,7 @@ public partial class MainWindowViewModel : ReactiveObject
             return;
         }
 
-        appState.SelectedRootFolder = selectedFolder;
+        appState.SelectedRootFolder = new PathLike(selectedFolder);
     }
 
     private async void OpenImage()
@@ -268,42 +268,35 @@ public partial class MainWindowViewModel : ReactiveObject
             return;
         }
 
-        await NavigateDirectlyToImage(imagePath);
+        await NavigateDirectlyToImage(new PathLike(imagePath));
     }
 
-    private async Task NavigateDirectlyToImage(string imagePath)
+    private async Task NavigateDirectlyToImage(PathLike imagePath)
     {
         logger.Log($"Navigating directly to image with path [{imagePath}]");
-        string selectedFolder = Path.GetDirectoryName(imagePath) ?? string.Empty;
-        string rootFolder = Path.GetDirectoryName(selectedFolder) ?? string.Empty;
+        PathLike? parentDirectory = imagePath.GetParentDirectory();
 
-        if (selectedFolder == null || rootFolder == null)
+        if (parentDirectory == null)
         {
-            logger.Log("Could not navigate directly to path because the path is missing one or more parent folders.");
+            logger.Log("Could not navigate directly to image because the parent folder of the image could not be found.");
             return;
         }
 
-        appState.SelectedRootFolder = rootFolder;
-        await FolderListDataContext.SelectFolder(selectedFolder);
-        await FolderPreviewDataContext.ViewImage(imagePath);
+        appState.SelectedRootFolder = parentDirectory;
+        await FolderListDataContext.SelectFolder(parentDirectory.PathString ?? string.Empty);
+        await FolderPreviewDataContext.ViewImage(imagePath.PathString ?? string.Empty);
     }
 
     private async void LoadInitialFolder()
     {
         logger.Log("Initializing app.");
-        string startPath = GetStartPathFromLaunchArguments();
-        if (startPath == string.Empty)
-        {
-            logger.Log("No startup path provided. No default image or root folder will be selected.");
-            return;
-        }
-
-        if (File.GetAttributes(startPath).HasFlag(FileAttributes.Directory))
+        PathLike startPath = GetStartPathFromLaunchArguments();
+        if (startPath.IsDirectory())
         {
             logger.Log($"Initializing app with pre-selected root folder of [{startPath}]");
             appState.SelectedRootFolder = startPath;
         }
-        else
+        else if (startPath.IsFile())
         {
             await NavigateDirectlyToImage(startPath);
         }

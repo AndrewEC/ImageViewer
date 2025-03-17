@@ -1,9 +1,7 @@
 namespace ImageViewer.ViewModels;
 
 using System;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Reactive;
 using Avalonia.Threading;
 using ImageViewer.Log;
@@ -80,7 +78,7 @@ public class ImagePreviewViewModel : ReactiveObject
         {
             this.RaiseAndSetIfChanged(ref selectedImage, value);
             IsImageSelected = value != null;
-            ImagePathExists = File.Exists(value?.AbsolutePath ?? string.Empty);
+            ImagePathExists = value?.Path.IsFile() ?? false;
         }
     }
 
@@ -129,7 +127,7 @@ public class ImagePreviewViewModel : ReactiveObject
         appState.SelectedTab = AvailableTabs.ImagePreview;
 
         slideshowTimer = new DispatcherTimer(
-            TimeSpan.FromMilliseconds(2000),
+            TimeSpan.FromMilliseconds(5000),
             DispatcherPriority.Normal,
             OnSlideshowTimerTick);
 
@@ -197,9 +195,9 @@ public class ImagePreviewViewModel : ReactiveObject
             return;
         }
 
-        string pathToDelete = appState.SelectedImage.AbsolutePath;
+        PathLike pathToDelete = appState.SelectedImage.Path;
 
-        if (!Path.Exists(pathToDelete))
+        if (!pathToDelete.IsFile())
         {
             return;
         }
@@ -218,7 +216,7 @@ public class ImagePreviewViewModel : ReactiveObject
 
         ViewNextImage();
 
-        File.Delete(pathToDelete);
+        pathToDelete.Delete();
     }
 
     private void OnSlideshowTimerTick(object? sender, EventArgs e)
@@ -249,7 +247,7 @@ public class ImagePreviewViewModel : ReactiveObject
         }
 
         int startingIndex = appState.SelectedImageIndex;
-        for (int i = 0; i < 10; i++)
+        while (true)
         {
             ImageItem? nextImage = GetNextImageInSelectedFolder(startingIndex, indexMapper);
             if (nextImage != null)
@@ -285,7 +283,7 @@ public class ImagePreviewViewModel : ReactiveObject
     private ImageItem? GetNextImageInSelectedFolder(int startIndex, Func<int, int> indexMapper)
     {
         logger.Log($"Looking for next image starting from index [{startIndex}] "
-            + $"in folder [{appState.SelectedFolder?.AbsolutePath}].");
+            + $"in folder [{appState.SelectedFolder?.Path}].");
 
         int currentIndex = startIndex;
         while ((currentIndex = indexMapper.Invoke(currentIndex)) != startIndex)
@@ -302,13 +300,13 @@ public class ImagePreviewViewModel : ReactiveObject
             }
 
             ImageItem image = appState.Images[currentIndex];
-            if (File.Exists(image.AbsolutePath))
+            if (image.Path.Exists())
             {
                 logger.Log($"Found image at path [{image}].");
                 return image;
             }
 
-            logger.Log($"Found image that no longer exists at path [{image.AbsolutePath}].");
+            logger.Log($"Found image that no longer exists at path [{image.Path}].");
         }
 
         return null;
@@ -341,13 +339,13 @@ public class ImagePreviewViewModel : ReactiveObject
             }
 
             FolderItem folder = appState.Folders[nextIndex];
-            if (PathLookup.GetSupportedImagesInFolder(folder.AbsolutePath).Length > 0)
+            if (PathLookup.GetSupportedImagesInFolder(folder.Path).Length > 0)
             {
-                logger.Log($"Found folder at path [{folder.AbsolutePath}].");
+                logger.Log($"Found folder at path [{folder.Path}].");
                 return folder;
             }
 
-            logger.Log($"Found folder that either doesn't exist or contains no images at [{folder.AbsolutePath}]");
+            logger.Log($"Found folder that either doesn't exist or contains no images at [{folder.Path}]");
         }
 
         logger.Log("No next folder could be found that is valid.");

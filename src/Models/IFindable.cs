@@ -4,10 +4,10 @@ namespace ImageViewer.Models;
 /// Indicates the underlying type should be "findable" in disk
 /// as it will have an absolute path referencing it's location.
 /// </summary>
-public interface IFindable
+public interface IPathResource
 {
     /// <summary>
-    /// Gets the absolute path to the file on disk.
+    /// Gets a representation of the path to the file on disk.
     /// </summary>
-    string AbsolutePath { get; }
+    PathLike Path { get; }
 }

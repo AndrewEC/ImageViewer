@@ -1,9 +1,10 @@
-namespace ImageViewer.ViewModels;
+namespace ImageViewer.Util;
 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using ImageViewer.Models;
 
 /// <summary>
 /// Common extensions to simplify some repeated code.
@@ -11,13 +12,28 @@ using System.Linq;
 public static class HelperExtensions
 {
     /// <summary>
-    /// Determines if the index falls within the bounds of the array.
+    /// Returns a subset of the source enumerable such that each resulting element in the
+    /// enumerable has an <see cref="IPathResource.Path"/> equal to the input path.
     /// </summary>
-    /// <typeparam name="T">The type of the underlying enumerable.</typeparam>
-    /// <param name="source">The underlying enumerable to check against.</param>
-    /// <param name="index">The index to be verified.</param>
-    /// <returns>True if the index falls within the bounds of the array otherwise, false.</returns>
-    public static bool IsValidIndex<T>(this IEnumerable<T> source, int index) => index >= 0 && index < source.Count();
+    /// <typeparam name="T">The enumerable collection type. Must be of type <see cref="IPathResource"/>.</typeparam>
+    /// <param name="source">The collection to filter on.</param>
+    /// <param name="absolutePath">The path to match the AbsolutePath of each element of the collection
+    /// against.</param>
+    /// <returns>An enumerable collection in which each element in the collection has an AbsolutePath
+    /// matching the input path.</returns>
+    public static IEnumerable<T> WhereByPath<T>(this IEnumerable<T> source, PathLike? absolutePath)
+    where T : IPathResource => source.Where(s => s.Path.Equals(absolutePath));
+
+    /// <summary>
+    /// Returns the first element in the enumerable in which the element has an
+    /// <see cref="IPathResource.Path"/> matching the input absolute path.
+    /// </summary>
+    /// <typeparam name="T">The enumerable collection type. Must be of type <see cref="IPathResource"/>.</typeparam>
+    /// <param name="source">The collection to filter on.</param>
+    /// <param name="absolutePath">The path to match the AbsolutePath of each element on.</param>
+    /// <returns>The first element with a matching path or null.</returns>
+    public static T? FirstByPath<T>(this IEnumerable<T> source, PathLike? absolutePath)
+    where T : IPathResource => source.WhereByPath(absolutePath).FirstOrDefault();
 
     /// <summary>
     /// Creates a property changed event handler that invokes a provided callback
@@ -49,7 +65,7 @@ public static class HelperExtensions
 
     /// <summary>
     /// Checks to see if two values might be the same. If both values are
-    /// <see cref="Array"/>s then this will be perform a shallow comparison
+    /// <see cref="Array"/>s then this will perform a shallow comparison
     /// between each of the elements in the array. If at least one of the value is
     /// not an array a comparison will be made using <see cref="object.Equals(object?, object?)"/>.
     /// </summary>
@@ -72,25 +88,24 @@ public static class HelperExtensions
     /// <summary>
     /// Converts the input value to a string. If a value is null this will default to
     /// "null". If this value is an Array this will iterate through each element and attempt
-    /// to invoke the ToString method of each and return a concatenated string of all the results.
+    /// to invoke the ToString method of said element and return a concatenated string of al
+    /// the results.
     /// </summary>
     /// <param name="value">The input value to be stringified.</param>
     /// <returns>A string representation of the input value based on the criteria above.</returns>
     public static string Stringify(object? value)
     {
-        if (value == null)
+        switch (value)
         {
-            return "null";
+            case null:
+                return "null";
+            case Array valueArray:
+                IEnumerable<string> result = Enumerable.Range(0, valueArray.Length)
+                    .Select(i => valueArray.GetValue(i))
+                    .Select(elem => elem?.ToString() ?? "null");
+                return $"[{string.Join(", ", result)}]";
+            default:
+                return value.ToString() ?? "null";
         }
-
-        if (value is Array valueArray)
-        {
-            IEnumerable<string> result = Enumerable.Range(0, valueArray.Length)
-                .Select(i => valueArray.GetValue(i))
-                .Select(value => value?.ToString() ?? "null");
-            return string.Format("[{0}]", string.Join(", ", result));
-        }
-
-        return value.ToString() ?? "null";
     }
 }

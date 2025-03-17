@@ -3,7 +3,6 @@ namespace ImageViewer.Models;
 using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using ImageViewer.Log;
 using ImageViewer.Util;
@@ -17,7 +16,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
 {
     private readonly ConsoleLogger<AppStateProperties> logger = new();
 
-    private string? selectedRootFolder = null;
+    private PathLike? selectedRootFolder = null;
 
     /// <summary>
     /// Gets or sets the currently selected folder. Upon setting this to a
@@ -25,7 +24,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// by scanning the directly nested folders of the updated root folder
     /// to find folders that contain at least one image.
     /// </summary>
-    public string? SelectedRootFolder
+    public PathLike? SelectedRootFolder
     {
         get => selectedRootFolder;
         set
@@ -35,7 +34,10 @@ public sealed class AppStateProperties : INotifyPropertyChanged
                 return;
             }
 
-            Folders = PathLookup.RecursivelyFindSubFolders(SelectedRootFolder, SelectedRootFolder);
+            if (SelectedRootFolder != null)
+            {
+                Folders = PathLookup.RecursivelyFindSubFolders(SelectedRootFolder);
+            }
         }
     }
 
@@ -50,13 +52,13 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         get => folders;
         private set
         {
-            FolderItem[] sorted = value.OrderBy(folder => folder.AbsolutePath).ToArray();
+            FolderItem[] sorted = value.OrderBy(folder => folder.Path).ToArray();
             if (!UpdateIfChanged(nameof(Folders), ref folders, sorted))
             {
                 return;
             }
 
-            SelectedFolder = SelectBestFit(Folders, SelectedFolder);
+            SelectedFolder = Folders.FirstByPath(SelectedFolder?.Path);
         }
     }
 
@@ -80,7 +82,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
             }
 
             SelectedFolderIndex = Array.IndexOf(Folders, value);
-            Images = PathLookup.GetSupportedImagesInFolder(SelectedFolder?.AbsolutePath)
+            Images = PathLookup.GetSupportedImagesInFolder(value?.Path ?? PathLike.Empty())
                 .Select(file => new ImageItem(file))
                 .ToArray();
         }
@@ -89,8 +91,8 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     private int selectedFolderIndex = -1;
 
     /// <summary>
-    /// Gets the index within the <see cref="Folders"/> array
-    /// of the <see cref="SelectedFolder"/>.
+    /// Gets the index the <see cref="SelectedFolder"/>. has within the
+    /// <see cref="Folders"/> array.
     /// </summary>
     public int SelectedFolderIndex
     {
@@ -108,10 +110,10 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         get => images;
         private set
         {
-            ImageItem[] sorted = value.OrderBy(image => image.AbsolutePath).ToArray();
+            ImageItem[] sorted = value.OrderBy(image => image.Path).ToArray();
             if (UpdateIfChanged(nameof(Images), ref images, sorted))
             {
-                SelectedImage = SelectBestFit(Images, SelectedImage);
+                SelectedImage = Images.FirstByPath(SelectedImage?.Path);
             }
         }
     }
@@ -139,8 +141,8 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     private int selectedImageIndex = -1;
 
     /// <summary>
-    /// Gets the index within the <see cref="Images"/> array of the
-    /// <see cref="SelectedImage"/>.
+    /// Gets the index of the <see cref="SelectedImage"/>. has within the
+    /// <see cref="Images"/> array.
     /// </summary>
     public int SelectedImageIndex
     {
@@ -185,9 +187,14 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// and add any nested folders.
     /// </summary>
     /// <param name="path">The absolute path to the folder being added.</param>
-    public void AddFolder(string path)
+    public void AddFolder(PathLike path)
     {
-        FolderItem[] newFolders = PathLookup.RecursivelyFindSubFolders(path, SelectedRootFolder, true);
+        if (SelectedRootFolder == null)
+        {
+            return;
+        }
+
+        FolderItem[] newFolders = PathLookup.RecursivelyFindSubFolders(path);
         Folders = [.. newFolders, .. Folders];
     }
 
@@ -196,10 +203,9 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// if the image is a direct child of the <see cref="SelectedFolder"/>.
     /// </summary>
     /// <param name="path">The absolute path to the image to add.</param>
-    public void AddImage(string path)
+    public void AddImage(PathLike path)
     {
-        string? parentFolder = Path.GetDirectoryName(path);
-        if (parentFolder == null || SelectedFolder?.AbsolutePath != parentFolder)
+        if (SelectedFolder == null || !SelectedFolder.Path.IsParentOf(path, true))
         {
             return;
         }
@@ -214,22 +220,20 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// does not match any folder in the <see cref="Folders"/> array.
     /// </summary>
     /// <param name="path">The absolute path to the folder to remove.</param>
-    public void RemoveFolder(string? path)
+    public void RemoveFolder(PathLike path)
     {
-        FolderItem? toRemove = Folders.Where(folder => folder.AbsolutePath == path).FirstOrDefault();
+        FolderItem? toRemove = Folders.FirstByPath(path);
         if (toRemove == null)
         {
             return;
         }
 
-        string[] childFolderPaths = Folders.Select(folder => folder.AbsolutePath)
-            .Where(path => path.StartsWith(toRemove.AbsolutePath))
+        FolderItem[] childFolders = Folders.Where(folder => toRemove.Path.IsParentOf(folder.Path))
             .ToArray();
 
-        string[] removableFolderPaths = [.. childFolderPaths, toRemove.AbsolutePath];
+        FolderItem[] removableFolderPaths = [.. childFolders, toRemove];
 
-        Folders = Folders.Where(folder => !removableFolderPaths.Contains(folder.AbsolutePath))
-            .ToArray();
+        Folders = [.. Folders.Where(folder => !removableFolderPaths.Contains(folder))];
     }
 
     /// <summary>
@@ -237,24 +241,21 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// <see cref="Images"/> array.
     /// </summary>
     /// <param name="path">The absolute path to the image to be removed.</param>
-    public void RemoveImage(string? path)
+    public void RemoveImage(PathLike path)
     {
-        ImageItem[] updated = Images.Where(image => image.AbsolutePath != path).ToArray();
+        ImageItem? toRemove = Images.FirstByPath(path);
+        if (toRemove != null)
+        {
+            return;
+        }
+
+        ImageItem[] updated = [.. Images.Where(image => !image.Equals(toRemove))];
         if (updated.Length == Images.Length)
         {
             return;
         }
 
         Images = updated;
-    }
-
-    private static T SelectBestFit<T>(T[] elements, T? previouslySelected)
-    where T : class, IFindable
-    {
-        string previouslySelectedPath = previouslySelected?.AbsolutePath ?? string.Empty;
-
-        return elements.Where(element => element.AbsolutePath == previouslySelectedPath)
-            .FirstOrDefault() ?? elements.First();
     }
 
     private bool UpdateIfChanged<T>(string propName, ref T currentValue, T nextValue)
