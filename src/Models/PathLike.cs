@@ -83,6 +83,11 @@ public sealed class PathLike(string? path) : IComparable<PathLike>
     /// <returns>The name of the file or directory represented by the <see cref="PathString"/>.</returns>
     public string GetName()
     {
+        if (!Exists())
+        {
+            return PathString.Split("\\")[^1];
+        }
+
         if (IsDirectory())
         {
             return new DirectoryInfo(PathString).Name;

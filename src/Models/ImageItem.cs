@@ -21,12 +21,18 @@ public sealed class ImageItem(PathLike absolutePath) : IPathResource
     /// When viewing the image as part of a list or grid the more memory efficient
     /// <see cref="Thumbnail"/> property should be preferred instead.
     /// </summary>
-    public Task<Bitmap?> Image { get; } = ImageCache.Instance.LoadImage(absolutePath.PathString);
+    public Task<Bitmap?> Image
+    {
+        get => ImageCache.Instance.LoadImage(Path.PathString);
+    }
 
     /// <summary>
     /// Gets a thumbnail of the image. Sized to be no-more than 200 pixels in width.
     /// </summary>
-    public Task<Bitmap?> Thumbnail { get; } = ImageCache.Instance.LoadThumbnail(absolutePath.PathString);
+    public Task<Bitmap?> Thumbnail
+    {
+        get => ImageCache.Instance.LoadThumbnail(Path.PathString);
+    }
 
     /// <summary>
     /// Stringifies this image item instance.

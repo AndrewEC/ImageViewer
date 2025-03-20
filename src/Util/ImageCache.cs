@@ -1,8 +1,10 @@
 namespace ImageViewer.Util;
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Timers;
 using Avalonia.Media.Imaging;
 using ImageViewer.Log;
 using Microsoft.Extensions.Caching.Memory;
@@ -27,10 +29,16 @@ public sealed class ImageCache
     private static readonly string ImageCacheKeyTemplate = "image-{0}";
 
     private readonly ConsoleLogger<ImageCache> logger = new();
-
     private readonly IMemoryCache cache = new MemoryCache(new MemoryCacheOptions());
+    private readonly HashSet<string> knownCacheKeys = [];
 
-    private ImageCache() { }
+    private ImageCache()
+    {
+        var timer = new Timer(TimeSpan.FromMinutes(5));
+        timer.Elapsed += OnTimerTick;
+        timer.AutoReset = true;
+        timer.Enabled = true;
+    }
 
     /// <summary>
     /// Loads a thumbnail from the specified path. This will return a previously
@@ -50,10 +58,11 @@ public sealed class ImageCache
     /// </summary>
     /// <param name="imagePath">The absolute path to the image being loaded.</param>
     /// <returns>An async task for loading the image bitmap.</returns>
-    public Task<Bitmap?> LoadImage(string? imagePath) => DoLoadImage(
-        string.Format(ImageCacheKeyTemplate, imagePath),
-        imagePath,
-        ReadImage);
+    public Task<Bitmap?> LoadImage(string? imagePath)
+        => DoLoadImage(
+            string.Format(ImageCacheKeyTemplate, imagePath),
+            imagePath,
+            ReadImage);
 
     private static Bitmap ReadThumbnail(string path)
     {
@@ -66,33 +75,65 @@ public sealed class ImageCache
     private static Bitmap ReadImage(string path) => new(path);
 
     private Task<Bitmap?> DoLoadImage(string key, string? imagePath, Func<string, Bitmap> loaderFunction)
-        => Task.Run(() =>
+    {
+        if (imagePath == null)
         {
-            if (imagePath == null)
-            {
-                return null;
-            }
+            return Task.FromResult<Bitmap?>(null);
+        }
 
-            if (cache.TryGetValue(key, out object? cachedThumbnail))
+        lock (Mutex)
+        {
+            if (cache.TryGetValue(key, out Bitmap? cachedThumbnail))
             {
-                return (Bitmap?)cachedThumbnail;
+                return Task.FromResult(cachedThumbnail);
             }
+        }
 
+        return Task.Run(() =>
+        {
             logger.Log($"Attempting to load bitmap for key [{key}].");
             Bitmap bitmap = loaderFunction.Invoke(imagePath);
 
+            var cacheEntryOptions = new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(5))
+                .RegisterPostEvictionCallback(OnImageEvicted);
+
             lock (Mutex)
             {
-                if (cache.TryGetValue(key, out object? cachedThumbnail2))
+                if (cache.TryGetValue(key, out Bitmap? cachedThumbnail2))
                 {
                     logger.Log($"Secondary cache lookup returned result for key [{key}]. Possible concurrency issue.");
                     bitmap.Dispose();
-                    return (Bitmap?)cachedThumbnail2;
+                    return cachedThumbnail2;
                 }
 
-                cache.Set(key, bitmap);
+                knownCacheKeys.Add(key);
+                cache.Set(key, bitmap, cacheEntryOptions);
             }
 
             return bitmap;
         });
+    }
+
+    private void OnImageEvicted(object key, object? value, EvictionReason reason, object? state)
+    {
+        if (value is not Bitmap image)
+        {
+            return;
+        }
+
+        logger.Log($"Image [{key}] was evicted from cache.");
+        image.Dispose();
+    }
+
+    private void OnTimerTick(object? sender, ElapsedEventArgs e)
+    {
+        lock (Mutex)
+        {
+            foreach (string key in knownCacheKeys)
+            {
+                cache.TryGetValue(key, out object? _);
+            }
+        }
+    }
 }
