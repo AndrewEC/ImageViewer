@@ -6,7 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ImageViewer.Log;
 using ImageViewer.Util;
-using ImageViewer.ViewModels;
 
 /// <summary>
 /// A global state container containing all shared properties of the app.
@@ -52,7 +51,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         get => folders;
         private set
         {
-            FolderItem[] sorted = value.OrderBy(folder => folder.Path).ToArray();
+            FolderItem[] sorted = [.. value.OrderBy(folder => folder.Path)];
             if (!UpdateIfChanged(nameof(Folders), ref folders, sorted))
             {
                 return;
@@ -110,7 +109,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         get => images;
         private set
         {
-            ImageItem[] sorted = value.OrderBy(image => image.Path).ToArray();
+            ImageItem[] sorted = [.. value.OrderBy(image => image.Path)];
             if (UpdateIfChanged(nameof(Images), ref images, sorted))
             {
                 SelectedImage = Images.FirstByPath(SelectedImage?.Path);

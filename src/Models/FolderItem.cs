@@ -32,9 +32,9 @@ public sealed class FolderItem(PathLike absolutePath, string displayName, PathLi
     /// Gets a thumbnail of the first image in the folder. Sized so the width
     /// is 200 pixels in size.
     /// </summary>
-    public Task<Bitmap?> PreviewImage
+    public Task<Bitmap> PreviewImage
     {
-        get => ImageCache.Instance.LoadThumbnail(PreviewImagePath?.PathString);
+        get => ImageCache.Instance.LoadThumbnailAsync(PreviewImagePath?.PathString);
     }
 
     /// <summary>

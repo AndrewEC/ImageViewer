@@ -10,7 +10,7 @@ using ImageViewer.Log;
 using Microsoft.Extensions.Caching.Memory;
 
 /// <summary>
-/// A singleton utility class to help load and cache thumbnail images.
+/// A singleton utility class to help load and cache images.
 /// All images will be cached by their patch and for up to 5 minutes.
 /// All images are automatically decoded to a target width of 200 pixels
 /// wide.
@@ -31,10 +31,15 @@ public sealed class ImageCache
     private readonly ConsoleLogger<ImageCache> logger = new();
     private readonly IMemoryCache cache = new MemoryCache(new MemoryCacheOptions());
     private readonly HashSet<string> knownCacheKeys = [];
+    private readonly Timer timer;
+
+    private readonly Bitmap defaultBitmap;
 
     private ImageCache()
     {
-        var timer = new Timer(TimeSpan.FromMinutes(5));
+        defaultBitmap = new("./Assets/default.png");
+
+        timer = new Timer(TimeSpan.FromMinutes(10));
         timer.Elapsed += OnTimerTick;
         timer.AutoReset = true;
         timer.Enabled = true;
@@ -46,7 +51,7 @@ public sealed class ImageCache
     /// </summary>
     /// <param name="imagePath">The absolute path to the image being loaded.</param>
     /// <returns>The async task for loading the thumbnail bitmap.</returns>
-    public Task<Bitmap?> LoadThumbnail(string? imagePath)
+    public Task<Bitmap> LoadThumbnailAsync(string? imagePath)
         => DoLoadImage(
             string.Format(ThumbnailCacheKeyTemplate, imagePath),
             imagePath,
@@ -58,7 +63,7 @@ public sealed class ImageCache
     /// </summary>
     /// <param name="imagePath">The absolute path to the image being loaded.</param>
     /// <returns>An async task for loading the image bitmap.</returns>
-    public Task<Bitmap?> LoadImage(string? imagePath)
+    public Task<Bitmap> LoadImageAsync(string? imagePath)
         => DoLoadImage(
             string.Format(ImageCacheKeyTemplate, imagePath),
             imagePath,
@@ -74,28 +79,28 @@ public sealed class ImageCache
 
     private static Bitmap ReadImage(string path) => new(path);
 
-    private Task<Bitmap?> DoLoadImage(string key, string? imagePath, Func<string, Bitmap> loaderFunction)
+    private Task<Bitmap> DoLoadImage(string key, string? imagePath, Func<string, Bitmap> loaderFunction)
     {
         if (imagePath == null)
         {
-            return Task.FromResult<Bitmap?>(null);
+            return Task.FromResult(defaultBitmap);
         }
 
         lock (Mutex)
         {
             if (cache.TryGetValue(key, out Bitmap? cachedThumbnail))
             {
-                return Task.FromResult(cachedThumbnail);
+                return Task.FromResult(cachedThumbnail!);
             }
         }
 
         return Task.Run(() =>
         {
             logger.Log($"Attempting to load bitmap for key [{key}].");
-            Bitmap bitmap = loaderFunction.Invoke(imagePath);
+            Bitmap bitmap = loaderFunction.Invoke(imagePath) ?? defaultBitmap;
 
             var cacheEntryOptions = new MemoryCacheEntryOptions()
-                .SetSlidingExpiration(TimeSpan.FromMinutes(5))
+                .SetSlidingExpiration(TimeSpan.FromMinutes(9))
                 .RegisterPostEvictionCallback(OnImageEvicted);
 
             lock (Mutex)
@@ -104,7 +109,7 @@ public sealed class ImageCache
                 {
                     logger.Log($"Secondary cache lookup returned result for key [{key}]. Possible concurrency issue.");
                     bitmap.Dispose();
-                    return cachedThumbnail2;
+                    return cachedThumbnail2!;
                 }
 
                 knownCacheKeys.Add(key);
@@ -123,15 +128,29 @@ public sealed class ImageCache
         }
 
         logger.Log($"Image [{key}] was evicted from cache.");
-        image.Dispose();
+        try
+        {
+            image.Dispose();
+        }
+        catch (Exception e)
+        {
+            logger.Error($"Failed to properly dispose of image [{key}].", e);
+        }
     }
 
     private void OnTimerTick(object? sender, ElapsedEventArgs e)
     {
+        if (sender != timer)
+        {
+            return;
+        }
+
         lock (Mutex)
         {
             foreach (string key in knownCacheKeys)
             {
+                // Cache eviction is triggered upon attempting to get an item
+                // out of cache that has been accessed within N minutes.
                 cache.TryGetValue(key, out object? _);
             }
         }

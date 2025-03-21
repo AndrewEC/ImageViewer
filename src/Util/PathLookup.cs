@@ -30,7 +30,8 @@ public static class PathLookup
     /// </summary>
     /// <param name="directory">The directory to scan for images within.</param>
     /// <returns>An array representing the absolute paths to the images found.</returns>
-    public static PathLike[] GetSupportedImagesInFolder(PathLike directory) => directory.GetChildFiles()
+    public static PathLike[] GetSupportedImagesInFolder(PathLike directory)
+        => directory.GetChildFiles()
             .Where(file => SupportedImageExtensions.Contains(file.GetExtension() ?? string.Empty))
             .ToArray();
 

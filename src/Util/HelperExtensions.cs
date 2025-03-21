@@ -88,7 +88,7 @@ public static class HelperExtensions
     /// <summary>
     /// Converts the input value to a string. If a value is null this will default to
     /// "null". If this value is an Array this will iterate through each element and attempt
-    /// to invoke the ToString method of said element and return a concatenated string of al
+    /// to invoke the ToString method of said element and return a concatenated string of all
     /// the results.
     /// </summary>
     /// <param name="value">The input value to be stringified.</param>

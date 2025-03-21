@@ -215,8 +215,10 @@ public sealed class PathLike(string? path) : IComparable<PathLike>
     /// <see cref="PathString"/> property.
     /// </summary>
     /// <param name="other">The other <see cref="PathLike"/> instance to compare to.</param>
-    /// <returns>The result of <see cref="PathString"/>'s <see cref="string.CompareTo(string?)"/> method.</returns>
-    public int CompareTo(PathLike? other) => string.Compare(PathString, other?.PathString, StringComparison.Ordinal);
+    /// <returns>The result of <see cref="PathString"/>'s
+    /// <see cref="string.CompareTo(string?)"/> method.</returns>
+    public int CompareTo(PathLike? other)
+        => string.Compare(PathString, other?.PathString, StringComparison.Ordinal);
 
     private static string Normalize(string? path)
     {
@@ -225,7 +227,8 @@ public sealed class PathLike(string? path) : IComparable<PathLike>
             return string.Empty;
         }
 
-        return Path.GetFullPath(path).Trim(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return Path.GetFullPath(path)
+            .Trim(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
     }
 
     private bool PointsTo(PathLike other)
