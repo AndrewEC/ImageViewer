@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using ImageViewer.Log;
 using ImageViewer.Models;
-using ImageViewer.ViewModels;
 
 /// <summary>
 /// A proxy class to help manage the <see cref="FileSystemWatcher"/> to watch for
@@ -104,7 +103,7 @@ internal sealed class WatcherProxy(AppStateProperties appState)
 
         if (fullPath.IsDirectory())
         {
-            FolderItem? oldFolder = GetDirectoryThatWasRenamed();
+            FolderResource? oldFolder = GetDirectoryThatWasRenamed();
             if (oldFolder != null)
             {
                 appState.RemoveFolder(oldFolder.Path);
@@ -114,7 +113,7 @@ internal sealed class WatcherProxy(AppStateProperties appState)
         }
         else if (fullPath.IsFile())
         {
-            ImageItem? oldImage = GetImageThatWasRenamed();
+            ImageResource? oldImage = GetImageThatWasRenamed();
             if (oldImage != null)
             {
                 appState.RemoveImage(oldImage.Path);
@@ -141,11 +140,11 @@ internal sealed class WatcherProxy(AppStateProperties appState)
 
     private bool WasFolder(PathLike path) => appState.Folders.WhereByPath(path).Any();
 
-    private ImageItem? GetImageThatWasRenamed() => appState.Images
+    private ImageResource? GetImageThatWasRenamed() => appState.Images
         .Where(image => !image.Path.IsFile())
         .FirstOrDefault();
 
-    private FolderItem? GetDirectoryThatWasRenamed() => appState.Folders
+    private FolderResource? GetDirectoryThatWasRenamed() => appState.Folders
         .Where(folder => !folder.Path.IsDirectory())
         .FirstOrDefault();
 

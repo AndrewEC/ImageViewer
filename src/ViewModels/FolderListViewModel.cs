@@ -2,6 +2,7 @@ namespace ImageViewer.ViewModels;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
+using ImageView.Util;
 using ImageViewer.Log;
 using ImageViewer.Models;
 using ImageViewer.Util;
@@ -30,7 +31,7 @@ public class FolderListViewModel : ReactiveObject
 
         SelectFolderCommand = ReactiveCommand.Create<string, Task>(SelectFolder);
 
-        appState.PropertyChanged += HelperExtensions.CreatePropertyChangeConsumer(
+        appState.PropertyChanged += EventBuilder.CreatePropertyChangeConsumer(
             appState,
             new()
             {
@@ -43,12 +44,12 @@ public class FolderListViewModel : ReactiveObject
     /// </summary>
     public ReactiveCommand<string, Task> SelectFolderCommand { get; }
 
-    private FolderItem[] folders = [];
+    private FolderResource[] folders = [];
 
     /// <summary>
     /// Gets or sets the array of folders the user can select from.
     /// </summary>
-    public FolderItem[] Folders
+    public FolderResource[] Folders
     {
         get => folders;
         set => this.RaiseAndSetIfChanged(ref folders, value);
@@ -64,7 +65,7 @@ public class FolderListViewModel : ReactiveObject
     {
         logger.Log($"Selecting folder from path [{folderPath}]");
 
-        FolderItem? folder = Folders.FirstByPath(new PathLike(folderPath));
+        FolderResource? folder = Folders.FirstByPath(new PathLike(folderPath));
         logger.Log($"Found folder [{folder?.DisplayName}]");
         if (!(folder?.Path.IsDirectory() ?? false))
         {

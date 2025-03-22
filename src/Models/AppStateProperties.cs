@@ -33,25 +33,28 @@ public sealed class AppStateProperties : INotifyPropertyChanged
                 return;
             }
 
-            if (SelectedRootFolder != null)
+            if (value != null)
             {
-                Folders = PathLookup.RecursivelyFindSubFolders(SelectedRootFolder);
+                Folders = [
+                    .. PathLikeExtensions.EnumerateChildDirectoryResources(SelectedRootFolder),
+                    PathLikeExtensions.ToFolderResource(SelectedRootFolder!)
+                ];
             }
         }
     }
 
-    private FolderItem[] folders = [];
+    private FolderResource[] folders = [];
 
     /// <summary>
     /// Gets the list of folders that are nested under the
     /// <see cref="SelectedRootFolder"/>.
     /// </summary>
-    public FolderItem[] Folders
+    public FolderResource[] Folders
     {
         get => folders;
         private set
         {
-            FolderItem[] sorted = [.. value.OrderBy(folder => folder.Path)];
+            FolderResource[] sorted = [.. value.OrderBy(folder => folder.Path)];
             if (!UpdateIfChanged(nameof(Folders), ref folders, sorted))
             {
                 return;
@@ -61,7 +64,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         }
     }
 
-    private FolderItem? selectedFolder = null;
+    private FolderResource? selectedFolder = null;
 
     /// <summary>
     /// Gets or sets the currently selected folder. Upon being updated
@@ -70,7 +73,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// or will set the array to contain a set of image files found within the
     /// folder path represented by the new value.
     /// </summary>
-    public FolderItem? SelectedFolder
+    public FolderResource? SelectedFolder
     {
         get => selectedFolder;
         set
@@ -81,9 +84,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
             }
 
             SelectedFolderIndex = Array.IndexOf(Folders, value);
-            Images = PathLookup.GetSupportedImagesInFolder(value?.Path ?? PathLike.Empty())
-                .Select(file => new ImageItem(file))
-                .ToArray();
+            Images = [.. PathLikeExtensions.EnumerateChildImageResources(value?.Path)];
         }
     }
 
@@ -99,17 +100,17 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         private set => UpdateIfChanged(nameof(SelectedFolderIndex), ref selectedFolderIndex, value);
     }
 
-    private ImageItem[] images = [];
+    private ImageResource[] images = [];
 
     /// <summary>
     /// Gets the array of images the user can pick from.
     /// </summary>
-    public ImageItem[] Images
+    public ImageResource[] Images
     {
         get => images;
         private set
         {
-            ImageItem[] sorted = [.. value.OrderBy(image => image.Path)];
+            ImageResource[] sorted = [.. value.OrderBy(image => image.Path)];
             if (UpdateIfChanged(nameof(Images), ref images, sorted))
             {
                 SelectedImage = Images.FirstByPath(SelectedImage?.Path);
@@ -117,13 +118,13 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         }
     }
 
-    private ImageItem? selectedImage = null;
+    private ImageResource? selectedImage = null;
 
     /// <summary>
     /// Gets or sets the currently selected image.
     /// is null or not.
     /// </summary>
-    public ImageItem? SelectedImage
+    public ImageResource? SelectedImage
     {
         get => selectedImage;
         set
@@ -173,12 +174,10 @@ public sealed class AppStateProperties : INotifyPropertyChanged
         set => UpdateIfChanged(nameof(IsSlideshowRunning), ref isSlideshowRunning, value);
     }
 
-#pragma warning disable SA1201
     /// <summary>
     /// An event to notify when a property within this state object changes.
     /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
-#pragma warning restore SA1201
 
     /// <summary>
     /// Adds a folder with the specified path to the existing
@@ -188,12 +187,12 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// <param name="path">The absolute path to the folder being added.</param>
     public void AddFolder(PathLike path)
     {
-        if (SelectedRootFolder == null)
+        if (SelectedRootFolder == default)
         {
             return;
         }
 
-        FolderItem[] newFolders = PathLookup.RecursivelyFindSubFolders(path);
+        FolderResource[] newFolders = [.. PathLikeExtensions.EnumerateChildDirectoryResources(path)];
         Folders = [.. newFolders, .. Folders];
     }
 
@@ -209,7 +208,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
             return;
         }
 
-        Images = [.. Images, new ImageItem(path)];
+        Images = [.. Images, new ImageResource(path)];
     }
 
     /// <summary>
@@ -221,16 +220,15 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// <param name="path">The absolute path to the folder to remove.</param>
     public void RemoveFolder(PathLike path)
     {
-        FolderItem? toRemove = Folders.FirstByPath(path);
+        FolderResource? toRemove = Folders.FirstByPath(path);
         if (toRemove == null)
         {
             return;
         }
 
-        FolderItem[] childFolders = Folders.Where(folder => toRemove.Path.IsParentOf(folder.Path))
-            .ToArray();
+        FolderResource[] childFolders = [.. Folders.Where(folder => toRemove.Path.IsParentOf(folder.Path))];
 
-        FolderItem[] removableFolderPaths = [.. childFolders, toRemove];
+        FolderResource[] removableFolderPaths = [.. childFolders, toRemove];
 
         Folders = [.. Folders.Where(folder => !removableFolderPaths.Contains(folder))];
     }
@@ -242,13 +240,13 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// <param name="path">The absolute path to the image to be removed.</param>
     public void RemoveImage(PathLike path)
     {
-        ImageItem? toRemove = Images.FirstByPath(path);
+        ImageResource? toRemove = Images.FirstByPath(path);
         if (toRemove != null)
         {
             return;
         }
 
-        ImageItem[] updated = [.. Images.Where(image => !image.Equals(toRemove))];
+        ImageResource[] updated = [.. Images.Where(image => !image.Equals(toRemove))];
         if (updated.Length == Images.Length)
         {
             return;
@@ -260,14 +258,14 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     private bool UpdateIfChanged<T>(string propName, ref T currentValue, T nextValue)
     {
         logger.Log($"Attempt to change property [{propName}]");
-        if (HelperExtensions.AreRoughlyEqual(currentValue, nextValue))
+        if (ChangeUtil.AreRoughlyEqual(currentValue, nextValue))
         {
             return false;
         }
 
         logger.Log($"Property [{propName}] changed from "
-            + $"[{HelperExtensions.Stringify(currentValue)}] "
-            + $"to [{HelperExtensions.Stringify(nextValue)}].");
+            + $"[{ChangeUtil.Stringify(currentValue)}] "
+            + $"to [{ChangeUtil.Stringify(nextValue)}].");
 
         currentValue = nextValue;
         PropertyChanged?.Invoke(this, new(propName));

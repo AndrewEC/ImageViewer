@@ -2,6 +2,7 @@ namespace ImageViewer.ViewModels;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
+using ImageView.Util;
 using ImageViewer.Models;
 using ImageViewer.Util;
 using ImageViewer.Views;
@@ -25,7 +26,7 @@ public class FolderPreviewViewModel : ReactiveObject
     public FolderPreviewViewModel(AppStateProperties appState)
     {
         this.appState = appState;
-        appState.PropertyChanged += HelperExtensions.CreatePropertyChangeConsumer(
+        appState.PropertyChanged += EventBuilder.CreatePropertyChangeConsumer(
             appState,
             new()
             {
@@ -41,23 +42,23 @@ public class FolderPreviewViewModel : ReactiveObject
     /// </summary>
     public ReactiveCommand<string, Task> ViewImageCommand { get; }
 
-    private ImageItem[] images = [];
+    private ImageResource[] images = [];
 
     /// <summary>
     /// Gets or sets the list of images the user can select from.
     /// </summary>
-    public ImageItem[] Images
+    public ImageResource[] Images
     {
         get => images;
         set => this.RaiseAndSetIfChanged(ref images, value);
     }
 
-    private FolderItem? selectedFolder = null;
+    private FolderResource? selectedFolder = null;
 
     /// <summary>
     /// Gets or sets the folder the user has selected.
     /// </summary>
-    public FolderItem? SelectedFolder
+    public FolderResource? SelectedFolder
     {
         get => selectedFolder;
         set => this.RaiseAndSetIfChanged(ref selectedFolder, value);
@@ -71,7 +72,7 @@ public class FolderPreviewViewModel : ReactiveObject
     /// <returns>An async task.</returns>
     public async Task ViewImage(string imagePath)
     {
-        ImageItem? image = Images.FirstByPath(new PathLike(imagePath));
+        ImageResource? image = Images.FirstByPath(new PathLike(imagePath));
         if (!(image?.Path.IsFile() ?? false))
         {
             await MessageBoxManager.GetMessageBoxStandard(

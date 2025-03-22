@@ -2,8 +2,10 @@ namespace ImageViewer.ViewModels;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reactive;
 using Avalonia.Threading;
+using ImageView.Util;
 using ImageViewer.Log;
 using ImageViewer.Models;
 using ImageViewer.Util;
@@ -30,7 +32,7 @@ public class ImagePreviewViewModel : ReactiveObject
     public ImagePreviewViewModel(AppStateProperties appState)
     {
         this.appState = appState;
-        appState.PropertyChanged += HelperExtensions.CreatePropertyChangeConsumer(
+        appState.PropertyChanged += EventBuilder.CreatePropertyChangeConsumer(
             appState,
             new()
             {
@@ -66,12 +68,12 @@ public class ImagePreviewViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref isImageSelected, value);
     }
 
-    private ImageItem? selectedImage = null;
+    private ImageResource? selectedImage = null;
 
     /// <summary>
     /// Gets or sets the image the user has currently selected.
     /// </summary>
-    public ImageItem? SelectedImage
+    public ImageResource? SelectedImage
     {
         get => selectedImage;
         set
@@ -249,14 +251,14 @@ public class ImagePreviewViewModel : ReactiveObject
         int startingIndex = appState.SelectedImageIndex;
         while (true)
         {
-            ImageItem? nextImage = GetNextImageInSelectedFolder(startingIndex, indexMapper);
+            ImageResource? nextImage = GetNextImageInSelectedFolder(startingIndex, indexMapper);
             if (nextImage != null)
             {
                 appState.SelectedImage = nextImage;
                 return true;
             }
 
-            FolderItem? nextFolder = GetNextFolder(indexMapper);
+            FolderResource? nextFolder = GetNextFolder(indexMapper);
             if (nextFolder != null)
             {
                 appState.SelectedFolder = nextFolder;
@@ -280,7 +282,7 @@ public class ImagePreviewViewModel : ReactiveObject
         return false;
     }
 
-    private ImageItem? GetNextImageInSelectedFolder(int startIndex, Func<int, int> indexMapper)
+    private ImageResource? GetNextImageInSelectedFolder(int startIndex, Func<int, int> indexMapper)
     {
         logger.Log($"Looking for next image starting from index [{startIndex}] "
             + $"in folder [{appState.SelectedFolder?.Path}].");
@@ -299,7 +301,7 @@ public class ImagePreviewViewModel : ReactiveObject
                 return null;
             }
 
-            ImageItem image = appState.Images[currentIndex];
+            ImageResource image = appState.Images[currentIndex];
             if (image.Path.Exists())
             {
                 logger.Log($"Found image at path [{image}].");
@@ -312,7 +314,7 @@ public class ImagePreviewViewModel : ReactiveObject
         return null;
     }
 
-    private FolderItem? GetNextFolder(Func<int, int> indexMapper)
+    private FolderResource? GetNextFolder(Func<int, int> indexMapper)
     {
         logger.Log("Getting next available folder.");
         if (appState.SelectedFolder == null || appState.Folders.Length < 2)
@@ -338,8 +340,8 @@ public class ImagePreviewViewModel : ReactiveObject
                 nextIndex = 0;
             }
 
-            FolderItem folder = appState.Folders[nextIndex];
-            if (PathLookup.GetSupportedImagesInFolder(folder.Path).Length > 0)
+            FolderResource folder = appState.Folders[nextIndex];
+            if (PathLikeExtensions.EnumerateChildImageResources(folder.Path).Any())
             {
                 logger.Log($"Found folder at path [{folder.Path}].");
                 return folder;

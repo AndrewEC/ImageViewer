@@ -16,7 +16,7 @@
             DockPanel.Dock="Top"/>
 
         <ScrollViewer DockPanel.Dock="Bottom">
-            <ItemsControl ItemsSource="{Binding Images}" Name="imageItemsControl">
+            <ItemsControl ItemsSource="{Binding Images}" Name="ImageResourcesControl">
 
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -25,10 +25,10 @@
                 </ItemsControl.ItemsPanel>
 
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="model:ImageItem">
+                    <DataTemplate DataType="model:ImageResource">
                         <Border Classes="PreviewBorder">
                             <Button Classes="ButtonWithImagePreview"
-                                Command="{Binding #imageItemsControl.((viewmodel:FolderPreviewViewModel)DataContext).ViewImageCommand}"
+                                Command="{Binding #ImageResourcesControl.((viewmodel:FolderPreviewViewModel)DataContext).ViewImageCommand}"
                                 CommandParameter="{Binding Path.PathString}">
 
                                 <Button.Content>

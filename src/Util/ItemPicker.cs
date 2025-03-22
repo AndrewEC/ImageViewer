@@ -72,7 +72,7 @@ internal static class ItemPicker
 
     private static FilePickerFileType LosslessFilePickerTypes() => new("Images")
     {
-        Patterns = PathLookup.SupportedImageExtensions.Select(ext => $"*{ext}").ToArray(),
+        Patterns = PathLikeExtensions.SupportedImageExtensions.Select(ext => $"*{ext}").ToArray(),
         AppleUniformTypeIdentifiers = ["public.image"],
         MimeTypes = ["image/*"],
     };

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using Avalonia.Media.Imaging;
 using ImageViewer.Log;
+using ImageViewer.Models;
 using Microsoft.Extensions.Caching.Memory;
 
 /// <summary>
@@ -51,7 +52,7 @@ public sealed class ImageCache
     /// </summary>
     /// <param name="imagePath">The absolute path to the image being loaded.</param>
     /// <returns>The async task for loading the thumbnail bitmap.</returns>
-    public Task<Bitmap> LoadThumbnailAsync(string? imagePath)
+    public Task<Bitmap> LoadThumbnailAsync(PathLike? imagePath)
         => DoLoadImage(
             string.Format(ThumbnailCacheKeyTemplate, imagePath),
             imagePath,
@@ -63,7 +64,7 @@ public sealed class ImageCache
     /// </summary>
     /// <param name="imagePath">The absolute path to the image being loaded.</param>
     /// <returns>An async task for loading the image bitmap.</returns>
-    public Task<Bitmap> LoadImageAsync(string? imagePath)
+    public Task<Bitmap> LoadImageAsync(PathLike imagePath)
         => DoLoadImage(
             string.Format(ImageCacheKeyTemplate, imagePath),
             imagePath,
@@ -79,9 +80,10 @@ public sealed class ImageCache
 
     private static Bitmap ReadImage(string path) => new(path);
 
-    private Task<Bitmap> DoLoadImage(string key, string? imagePath, Func<string, Bitmap> loaderFunction)
+    private Task<Bitmap> DoLoadImage(string key, PathLike? imagePath, Func<string, Bitmap> loaderFunction)
     {
-        if (imagePath == null)
+        string pathString = imagePath?.PathString ?? string.Empty;
+        if (pathString == string.Empty)
         {
             return Task.FromResult(defaultBitmap);
         }
@@ -97,7 +99,7 @@ public sealed class ImageCache
         return Task.Run(() =>
         {
             logger.Log($"Attempting to load bitmap for key [{key}].");
-            Bitmap bitmap = loaderFunction.Invoke(imagePath) ?? defaultBitmap;
+            Bitmap bitmap = loaderFunction.Invoke(pathString) ?? defaultBitmap;
 
             var cacheEntryOptions = new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(9))

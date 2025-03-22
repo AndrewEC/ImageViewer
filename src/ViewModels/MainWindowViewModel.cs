@@ -8,6 +8,7 @@ using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using ImageView.Util;
 using ImageViewer.Log;
 using ImageViewer.Models;
 using ImageViewer.Util;
@@ -32,7 +33,7 @@ public partial class MainWindowViewModel : ReactiveObject
     {
         watcherProxy = new(appState);
 
-        appState.PropertyChanged += HelperExtensions.CreatePropertyChangeConsumer(
+        appState.PropertyChanged += EventBuilder.CreatePropertyChangeConsumer(
             appState,
             new()
             {
@@ -274,9 +275,9 @@ public partial class MainWindowViewModel : ReactiveObject
     private async Task NavigateDirectlyToImage(PathLike imagePath)
     {
         logger.Log($"Navigating directly to image with path [{imagePath}]");
-        PathLike? parentDirectory = imagePath.GetParentDirectory();
+        PathLike parentDirectory = imagePath.GetParentDirectory();
 
-        if (parentDirectory == null)
+        if (parentDirectory == default)
         {
             logger.Log("Could not navigate directly to image because the parent folder of the image could not be found.");
             return;

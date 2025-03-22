@@ -1,6 +1,7 @@
 namespace ImageViewer.Models;
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -10,15 +11,32 @@ using System.Linq;
 /// </summary>
 /// <param name="path">The input path string. If this is null the instance
 /// will be initialized with an empty string.</param>
-public sealed class PathLike(string? path) : IComparable<PathLike>
+public class PathLike(string? path) : IComparable<PathLike>
 {
     /// <summary>
-    /// Gets the input that string that has been normalized or empty if
+    /// Gets the input string that has been normalized or empty if
     /// no path was provided. The normalized path guarantees that all
     /// folders/files will be separated with a backslash only, and there will be
     /// no trailing slash at the end of a folder name.
     /// </summary>
     public string PathString { get; } = Normalize(path);
+
+    /// <summary>
+    /// Checks the two values are equal using the <see cref="Equals(object?)"/> method.
+    /// </summary>
+    /// <param name="first">The first value to compare for equality.</param>
+    /// <param name="second">The second value to compare for equality.</param>
+    /// <returns>The return value of <see cref="Equals(object?)"/>.</returns>
+    public static bool operator ==(PathLike? first, PathLike? second) => Equals(first, second);
+
+    /// <summary>
+    /// Checks the two values are not equal by invoking and negating the value
+    /// of <see cref="Equals(object?)"/>.
+    /// </summary>
+    /// <param name="first">The first value to compare for equality.</param>
+    /// <param name="second">The second value to compare for equality.</param>
+    /// <returns>The negated for returned by <see cref="Equals(object?)"/>.</returns>
+    public static bool operator !=(PathLike? first, PathLike? second) => !Equals(first, second);
 
     /// <summary>
     /// Creats a new <see cref="PathLike"/> with the <see cref="PathString"/>
@@ -97,36 +115,46 @@ public sealed class PathLike(string? path) : IComparable<PathLike>
     }
 
     /// <summary>
-    /// Gets an array of <see cref="PathLike"/> directory objects that are direct
+    /// Gets an array of <see cref="PathLike"/> directory objects that are
     /// children of this object. If this instance is not a directory an empty array will
     /// be returned.
     /// </summary>
+    /// <param name="recursive">If true this will recursively search for all directories
+    /// that can be considered a child of this path.</param>
     /// <returns>An array of immediate child directories or an empty array if this is
     /// not a directory.</returns>
-    public PathLike[] GetChildDirectories()
+    public IEnumerable<PathLike> EnumerateChildDirectories(bool recursive = false)
     {
         if (!IsDirectory())
         {
             return [];
         }
 
-        return [.. Directory.GetDirectories(PathString).Select(dir => new PathLike(dir))];
+        SearchOption option = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+
+        return Directory.EnumerateDirectories(PathString, string.Empty, option)
+            .Select(dir => new PathLike(dir));
     }
 
     /// <summary>
     /// Gets an array of <see cref="PathLike"/> file objects that are direct children
     /// of this object. If this instance is not a directory an empty array will be returned.
     /// </summary>
+    /// <param name="recursive">If true this will recursively search for all files
+    /// that can be considered a child of this path.</param>
     /// <returns>An array of immediate child files or an empty array if this path is not a
     /// directory.</returns>
-    public PathLike[] GetChildFiles()
+    public IEnumerable<PathLike> EnumerateChildFiles(bool recursive = false)
     {
         if (!IsDirectory())
         {
             return [];
         }
 
-        return [.. Directory.GetFiles(PathString).Select(file => new PathLike(file))];
+        SearchOption option = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+
+        return Directory.EnumerateFiles(PathString, string.Empty, option)
+            .Select(file => new PathLike(file));
     }
 
     /// <summary>
@@ -139,14 +167,14 @@ public sealed class PathLike(string? path) : IComparable<PathLike>
     /// <summary>
     /// Determines if this <see cref="PathLike"/> is a parent of the input
     /// <see cref="PathLike"/>. This will continually check the parent of the input
-    /// path until one of the parents up the file tree either matches this or once
-    /// the root of the drive has been reached. If a match is found this will return true.
-    /// If the root of the drive has been reached and no match yet found then this will
+    /// path until one of the parents up the file tree either matches this instance or once
+    /// the root of the drive has been reached. If a match is found then true will be returned.
+    /// If the root of the drive has been reached and no match was found then this will
     /// return false.
     /// </summary>
     /// <param name="other">The path to check against.</param>
     /// <param name="directParentOnly">If true this will only check if the first
-    /// parent of the input path is equal to this.</param>
+    /// parent of the input path is equal to this instance.</param>
     /// <returns>True if this is a parent directory of the input path.</returns>
     public bool IsParentOf(PathLike other, bool directParentOnly = false)
     {
@@ -155,20 +183,20 @@ public sealed class PathLike(string? path) : IComparable<PathLike>
             return false;
         }
 
-        if (PointsTo(other))
+        if (this == other)
         {
             return false;
         }
 
         PathLike otherParent = other.GetParentDirectory();
-        if (directParentOnly && !PointsTo(otherParent))
+        if (directParentOnly && this != otherParent)
         {
             return false;
         }
 
         while (otherParent.IsDirectory())
         {
-            if (PointsTo(otherParent))
+            if (this == otherParent)
             {
                 return true;
             }
@@ -179,65 +207,28 @@ public sealed class PathLike(string? path) : IComparable<PathLike>
         return false;
     }
 
-    /// <summary>
-    /// Compares this instance to another object. This is considered equal to the other object
-    /// if the other object is a <see cref="PathLike"/> and the two are equal based
-    /// on the criteria in the <see cref="PointsTo(PathLike)"/> method.
-    /// </summary>
-    /// <param name="obj">The other object to compare this one to.</param>
-    /// <returns>True if the aforementioned criteria has been met.</returns>
+    /// <inheritdoc/>
     public override bool Equals(object? obj)
-    {
-        if (obj == null || obj is not PathLike pathLike)
-        {
-            return false;
-        }
+        => obj is PathLike other && PathString == other.PathString;
 
-        return PointsTo(pathLike);
-    }
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine(PathString);
 
-    /// <summary>
-    /// Gets the hashcode.
-    /// </summary>
-    /// <returns>The hashcode.</returns>
-    public override int GetHashCode() => base.GetHashCode();
-
-    /// <summary>
-    /// Gets the string representation of this pathlike object which is simply
-    /// value of the <see cref="PathString"/>.
-    /// </summary>
-    /// <returns>The value of the <see cref="PathString"/>.</returns>
+    /// <inheritdoc/>
     public override string ToString() => PathString;
 
-    /// <summary>
-    /// Compares this to another <see cref="PathLike"/> instance. This
-    /// effectively compares the two by comparing the value of the
-    /// <see cref="PathString"/> property.
-    /// </summary>
-    /// <param name="other">The other <see cref="PathLike"/> instance to compare to.</param>
-    /// <returns>The result of <see cref="PathString"/>'s
-    /// <see cref="string.CompareTo(string?)"/> method.</returns>
+    /// <inheritdoc/>
     public int CompareTo(PathLike? other)
         => string.Compare(PathString, other?.PathString, StringComparison.Ordinal);
 
     private static string Normalize(string? path)
     {
-        if (path == null)
+        if (path == null || path == string.Empty)
         {
             return string.Empty;
         }
 
         return Path.GetFullPath(path)
             .Trim(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-    }
-
-    private bool PointsTo(PathLike other)
-    {
-        if (other.PathString == string.Empty || PathString == string.Empty)
-        {
-            return false;
-        }
-
-        return PathString == other.PathString;
     }
 }
