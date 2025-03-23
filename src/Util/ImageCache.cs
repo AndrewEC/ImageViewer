@@ -16,7 +16,7 @@ using Microsoft.Extensions.Caching.Memory;
 /// All images are automatically decoded to a target width of 200 pixels
 /// wide.
 /// </summary>
-public sealed class ImageCache
+public sealed class ImageCache : IDisposable
 {
     /// <summary>
     /// The singleton instance of the <see cref="ImageCache"/>.
@@ -30,11 +30,13 @@ public sealed class ImageCache
     private static readonly string ImageCacheKeyTemplate = "image-{0}";
 
     private readonly ConsoleLogger<ImageCache> logger = new();
-    private readonly IMemoryCache cache = new MemoryCache(new MemoryCacheOptions());
+    private readonly MemoryCache cache = new MemoryCache(new MemoryCacheOptions());
     private readonly HashSet<string> knownCacheKeys = [];
     private readonly Timer timer;
 
     private readonly Bitmap defaultBitmap;
+
+    private bool disposed = false;
 
     private ImageCache()
     {
@@ -70,6 +72,45 @@ public sealed class ImageCache
             imagePath,
             ReadImage);
 
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        lock (Mutex)
+        {
+            RunMany(
+                cache.Clear,
+                cache.Dispose,
+                defaultBitmap.Dispose,
+                () =>
+                {
+                    timer.Enabled = false;
+                    timer.Dispose();
+                });
+        }
+
+        disposed = true;
+        GC.SuppressFinalize(this);
+    }
+
+    private static void RunMany(params Action[] actions)
+    {
+        foreach (Action action in actions)
+        {
+            try
+            {
+                action.Invoke();
+            }
+            catch
+            {
+            }
+        }
+    }
+
     private static Bitmap ReadThumbnail(string path)
     {
         using (FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -82,6 +123,11 @@ public sealed class ImageCache
 
     private Task<Bitmap> DoLoadImage(string key, PathLike? imagePath, Func<string, Bitmap> loaderFunction)
     {
+        if (disposed)
+        {
+            throw new ObjectDisposedException(typeof(ImageCache).FullName);
+        }
+
         string pathString = imagePath?.PathString ?? string.Empty;
         if (pathString == string.Empty)
         {

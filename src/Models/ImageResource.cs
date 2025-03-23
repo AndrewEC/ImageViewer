@@ -41,7 +41,7 @@ public sealed class ImageResource(PathLike absolutePath) : IPathResource
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)
-        => obj != null && obj is ImageResource other && other.Path == Path;
+        => obj is ImageResource other && other.Path == Path;
 
     /// <inheritdoc/>
     public override int GetHashCode() => HashCode.Combine(Path);

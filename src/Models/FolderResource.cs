@@ -49,8 +49,7 @@ public sealed class FolderResource(PathLike absolutePath, string displayName, Pa
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)
-        => obj != null && obj is FolderResource other
-            && Path == other.Path && DisplayName == other.DisplayName;
+        => obj is FolderResource other && Path == other.Path;
 
     /// <inheritdoc/>
     public override int GetHashCode() => HashCode.Combine(Path, DisplayName, PreviewImagePath);

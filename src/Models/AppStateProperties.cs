@@ -20,8 +20,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// <summary>
     /// Gets or sets the currently selected folder. Upon setting this to a
     /// non-null value this will trigger an update in the <see cref="Folders"/>
-    /// by scanning the directly nested folders of the updated root folder
-    /// to find folders that contain at least one image.
+    /// by scanning the selected root for recursively nested folders.
     /// </summary>
     public PathLike? SelectedRootFolder
     {
@@ -91,7 +90,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     private int selectedFolderIndex = -1;
 
     /// <summary>
-    /// Gets the index the <see cref="SelectedFolder"/>. has within the
+    /// Gets the index of the <see cref="SelectedFolder"/> within the
     /// <see cref="Folders"/> array.
     /// </summary>
     public int SelectedFolderIndex
@@ -103,7 +102,8 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     private ImageResource[] images = [];
 
     /// <summary>
-    /// Gets the array of images the user can pick from.
+    /// Gets the array of images the user can pick from. This array will always be
+    /// sored by the <see cref="ImageResource.Path"/>.
     /// </summary>
     public ImageResource[] Images
     {
@@ -122,7 +122,6 @@ public sealed class AppStateProperties : INotifyPropertyChanged
 
     /// <summary>
     /// Gets or sets the currently selected image.
-    /// is null or not.
     /// </summary>
     public ImageResource? SelectedImage
     {
@@ -141,7 +140,7 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     private int selectedImageIndex = -1;
 
     /// <summary>
-    /// Gets the index of the <see cref="SelectedImage"/>. has within the
+    /// Gets the index of the <see cref="SelectedImage"/> within the
     /// <see cref="Images"/> array.
     /// </summary>
     public int SelectedImageIndex
@@ -182,23 +181,26 @@ public sealed class AppStateProperties : INotifyPropertyChanged
     /// <summary>
     /// Adds a folder with the specified path to the existing
     /// <see cref="Folders"/> array. This will also recursively lookup
-    /// and add any nested folders.
+    /// and add any nested folders to said array.
     /// </summary>
     /// <param name="path">The absolute path to the folder being added.</param>
     public void AddFolder(PathLike path)
     {
-        if (SelectedRootFolder == default)
+        if (SelectedRootFolder == null)
         {
             return;
         }
 
-        FolderResource[] newFolders = [.. PathLikeExtensions.EnumerateChildDirectoryResources(path)];
+        FolderResource[] newFolders = [
+            .. PathLikeExtensions.EnumerateChildDirectoryResources(path),
+            PathLikeExtensions.ToFolderResource(path)
+        ];
         Folders = [.. newFolders, .. Folders];
     }
 
     /// <summary>
     /// Adds an image to the current <see cref="Images"/> array. This will add the image
-    /// if the image is a direct child of the <see cref="SelectedFolder"/>.
+    /// only if the image is a direct child of the <see cref="SelectedFolder"/>.
     /// </summary>
     /// <param name="path">The absolute path to the image to add.</param>
     public void AddImage(PathLike path)

@@ -133,7 +133,8 @@ internal sealed class WatcherProxy(AppStateProperties appState)
         }
         else if (WasImageInCurrentlySelectedFolder(fullPath))
         {
-            logger.Log("Deleted path appears to have been an image in currently selected folder. Removing image from available array.");
+            logger.Log("Deleted path appears to have been an image in currently selected folder. "
+                + "Removing image from available array.");
             appState.RemoveImage(fullPath);
         }
     }
@@ -149,9 +150,5 @@ internal sealed class WatcherProxy(AppStateProperties appState)
         .FirstOrDefault();
 
     private bool WasImageInCurrentlySelectedFolder(PathLike path)
-    {
-        PathLike? parentFolder = path.GetParentDirectory();
-        return parentFolder != null
-            && appState.SelectedFolder?.Path == parentFolder;
-    }
+        => path.IsFile() && (appState.SelectedFolder?.Path.IsParentOf(path) ?? false);
 }

@@ -67,12 +67,12 @@ internal static class ItemPicker
             return string.Empty;
         }
 
-        return files[0].Path.AbsolutePath.ToString();
+        return Path.GetFullPath(Uri.UnescapeDataString(files[0].Path.AbsolutePath.ToString()));
     }
 
     private static FilePickerFileType LosslessFilePickerTypes() => new("Images")
     {
-        Patterns = PathLikeExtensions.SupportedImageExtensions.Select(ext => $"*{ext}").ToArray(),
+        Patterns = [.. PathLikeExtensions.SupportedImageExtensions.Select(ext => $"*{ext}")],
         AppleUniformTypeIdentifiers = ["public.image"],
         MimeTypes = ["image/*"],
     };

@@ -75,6 +75,12 @@ public class PathLike(string? path) : IComparable<PathLike>
     public string? GetExtension() => Path.GetExtension(PathString);
 
     /// <summary>
+    /// Checks if the <see cref="PathString"/> is empty.
+    /// </summary>
+    /// <returns>True if the <see cref="PathString"/> is empty.</returns>
+    public bool IsEmpty() => PathString == string.Empty;
+
+    /// <summary>
     /// Deleted the <see cref="PathString"/> from disk. If the path string doesn't exist
     /// on disk this will do nothing. If the path is a directory the directory will be
     /// recursively deleted.
@@ -121,7 +127,7 @@ public class PathLike(string? path) : IComparable<PathLike>
     /// </summary>
     /// <param name="recursive">If true this will recursively search for all directories
     /// that can be considered a child of this path.</param>
-    /// <returns>An array of immediate child directories or an empty array if this is
+    /// <returns>An array of child directories or an empty array if this is
     /// not a directory.</returns>
     public IEnumerable<PathLike> EnumerateChildDirectories(bool recursive = false)
     {
@@ -137,12 +143,12 @@ public class PathLike(string? path) : IComparable<PathLike>
     }
 
     /// <summary>
-    /// Gets an array of <see cref="PathLike"/> file objects that are direct children
+    /// Gets an array of <see cref="PathLike"/> file objects that are children
     /// of this object. If this instance is not a directory an empty array will be returned.
     /// </summary>
     /// <param name="recursive">If true this will recursively search for all files
     /// that can be considered a child of this path.</param>
-    /// <returns>An array of immediate child files or an empty array if this path is not a
+    /// <returns>An array of child files or an empty array if this path is not a
     /// directory.</returns>
     public IEnumerable<PathLike> EnumerateChildFiles(bool recursive = false)
     {
@@ -194,7 +200,7 @@ public class PathLike(string? path) : IComparable<PathLike>
             return false;
         }
 
-        while (otherParent.IsDirectory())
+        while (!otherParent.IsEmpty())
         {
             if (this == otherParent)
             {

@@ -12,7 +12,7 @@ public static class ChangeUtil
     /// <summary>
     /// Checks to see if two values might be the same. If both values are
     /// <see cref="Array"/>s then this will perform a shallow comparison
-    /// between each of the elements in the array. If at least one of the value is
+    /// between each of the elements in the array. If at least one of the values is
     /// not an array a comparison will be made using <see cref="object.Equals(object?, object?)"/>.
     /// </summary>
     /// <param name="currentValue">The first value to compare.</param>

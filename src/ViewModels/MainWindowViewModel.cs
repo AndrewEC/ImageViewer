@@ -12,6 +12,7 @@ using ImageView.Util;
 using ImageViewer.Log;
 using ImageViewer.Models;
 using ImageViewer.Util;
+using ImageViewer.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
@@ -29,8 +30,15 @@ public partial class MainWindowViewModel : ReactiveObject
     /// <summary>
     /// Initializes the view model.
     /// </summary>
-    public MainWindowViewModel()
+    /// <param name="mainWindow">The main window object to register the closing event on.</param>
+    public MainWindowViewModel(MainWindow mainWindow)
     {
+        mainWindow.Closing += (sender, e) =>
+        {
+            logger.Log("Window closing. Disposing of image cache.");
+            ImageCache.Instance.Dispose();
+        };
+
         watcherProxy = new(appState);
 
         appState.PropertyChanged += EventBuilder.CreatePropertyChangeConsumer(
@@ -277,7 +285,7 @@ public partial class MainWindowViewModel : ReactiveObject
         logger.Log($"Navigating directly to image with path [{imagePath}]");
         PathLike parentDirectory = imagePath.GetParentDirectory();
 
-        if (parentDirectory == default)
+        if (parentDirectory == null)
         {
             logger.Log("Could not navigate directly to image because the parent folder of the image could not be found.");
             return;
