@@ -1,0 +1,49 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+
+        xmlns:vm="using:ImageViewer.Core.ViewModels"
+        xmlns:view="using:ImageViewer.Core.Views"
+
+        Title="ImageViewer"
+        Icon="/Assets/imageviewer-logo.ico"
+
+        d:DesignWidth="800"
+        d:DesignHeight="450"
+
+        x:Class="ImageViewer.Core.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel">
+    
+    <Window.Styles>
+        <StyleInclude Source="/Core/Styles/Styles.axaml" />
+    </Window.Styles>
+    
+    <DockPanel>
+        <TabStrip SelectedIndex="{Binding SelectedTabIndex}"
+            Classes="MainTabControl"
+            IsVisible="{Binding !IsSlideshowRunning}"
+            DockPanel.Dock="Top">
+            <TabStripItem>Explorer</TabStripItem>
+            <TabStripItem>Preview</TabStripItem>
+            <TabStripItem>Settings</TabStripItem>
+        </TabStrip>
+
+        <Panel IsVisible="{Binding ExplorerView}" DockPanel.Dock="Bottom">
+            <Grid ColumnDefinitions="25*,75*">
+                <view:ExplorerView Grid.Row="0" Grid.Column="0" />
+                <view:FolderPreview Grid.Row="0" Grid.Column="1" />
+            </Grid>
+        </Panel>
+
+        <Panel IsVisible="{Binding ImageView}" DockPanel.Dock="Bottom">
+            <view:ImagePreview />
+        </Panel>
+
+        <Panel IsVisible="{Binding SettingsView}" DockPanel.Dock="Bottom">
+            <view:SettingsView />
+        </Panel>
+    </DockPanel>
+
+</Window>
