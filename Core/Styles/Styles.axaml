@@ -29,6 +29,7 @@
 
     <Style Selector="Button.LeftArrow">
         <Setter Property="Margin" Value="0, 0, 10, 0" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
     </Style>
 
     <Style Selector="Button.RightArrow">

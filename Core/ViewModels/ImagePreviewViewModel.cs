@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reactive;
 using System.Timers;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using ImageViewer.Core.Config;
@@ -18,9 +19,16 @@ using ReactiveUI;
 public partial class ImagePreviewViewModel : ViewModelBase
 #pragma warning restore CA1001
 {
+    private const double DefaultScale = 100;
+    private const double MaxScale = DefaultScale * 2;
+    private const double MinScale = DefaultScale / 2;
+
     private readonly ConsoleLogger<ImagePreviewViewModel> logger = new();
 
     private Timer? slideshowTimer;
+    private readonly Canvas canvas;
+    private readonly Image referenceImage;
+    private double imageScale = DefaultScale;
 
     public ImagePreviewViewModel(ImagePreview parent)
     {
@@ -51,6 +59,13 @@ public partial class ImagePreviewViewModel : ViewModelBase
         Button previousButton = parent.FindControl<Button>("PreviousButton")!;
         Button stopSlideshowButton = parent.FindControl<Button>("StopSlideshowButton")!;
 
+        canvas = parent.FindControl<Canvas>("ImageCanvas")!;
+        canvas.SizeChanged += OnCanvasSizeChanged;
+        canvas.PointerWheelChanged += OnCanvasScroll;
+
+        referenceImage = parent.FindControl<Image>("ReferenceImage")!;
+        referenceImage.SizeChanged += OnReferenceImageSizeChanged;
+
         HotKeyManager.SetHotKey(nextButton, new KeyGesture(Key.D));
         HotKeyManager.SetHotKey(previousButton, new KeyGesture(Key.A));
         HotKeyManager.SetHotKey(stopSlideshowButton, new KeyGesture(Key.Escape));
@@ -68,8 +83,14 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
     public ReactiveCommand<Unit, Unit> ShowInExplorerCommand { get; }
 
-    private bool isNavigationEnabled;
+    private ImageRect imageRect = new(0, 0, 1, 1);
+    public ImageRect ImageRect
+    {
+        get => imageRect;
+        set => this.RaiseAndSetIfChanged(ref imageRect, value);
+    }
 
+    private bool isNavigationEnabled;
     public bool IsNavigationEnabled
     {
         get => isNavigationEnabled;
@@ -77,7 +98,6 @@ public partial class ImagePreviewViewModel : ViewModelBase
     }
 
     private bool isImageSelected;
-
     public bool IsImageSelected
     {
         get => isImageSelected;
@@ -85,13 +105,13 @@ public partial class ImagePreviewViewModel : ViewModelBase
     }
 
     private bool isSlideshowRunning;
-
     public bool IsSlideshowRunning
     {
         get => isSlideshowRunning;
         set
         {
             this.RaiseAndSetIfChanged(ref isSlideshowRunning, value);
+            SetScale(DefaultScale);
             if (value)
             {
                 StartSlideshow();
@@ -104,7 +124,6 @@ public partial class ImagePreviewViewModel : ViewModelBase
     }
 
     private ImageResource? selectedImage;
-
     public ImageResource? SelectedImage
     {
         get => selectedImage;
@@ -113,6 +132,109 @@ public partial class ImagePreviewViewModel : ViewModelBase
             this.RaiseAndSetIfChanged(ref selectedImage, value);
             IsImageSelected = value != null;
         }
+    }
+
+    private void OnCanvasScroll(object? sender, PointerWheelEventArgs e)
+    {
+        if (sender != canvas)
+        {
+            return;
+        }
+
+        SetScale(imageScale + e.Delta.Y * 3);
+    }
+
+    private void SetScale(double nextScale)
+    {
+        imageScale = nextScale;
+
+        if (imageScale > MaxScale)
+        {
+            imageScale = MaxScale;
+            return;
+        }
+        else if (imageScale < MinScale)
+        {
+            imageScale = MinScale;
+            return;
+        }
+
+        Size canvasSize = new(canvas.Bounds.Width, canvas.Bounds.Height);
+        Size referenceImageSize = new(referenceImage.Bounds.Width, referenceImage.Bounds.Height);
+        ImageRect = ResizeImage(canvasSize, referenceImageSize);
+    }
+
+    private void OnReferenceImageSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (sender != referenceImage)
+        {
+            return;
+        }
+
+        imageScale = 100;
+
+        Size canvasSize = new(canvas.Bounds.Width, canvas.Bounds.Height);
+        Size referenceImageSize = e.NewSize;
+
+        ImageRect = ResizeImage(canvasSize, referenceImageSize);
+    }
+
+    private void OnCanvasSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (sender != canvas)
+        {
+            return;
+        }
+
+        Size canvasSize = e.NewSize;
+        Size referenceImageSize = new(referenceImage.Bounds.Width, referenceImage.Bounds.Height);
+
+        ImageRect = ResizeImage(canvasSize, referenceImageSize);
+    }
+
+    private ImageRect ResizeImage(Size canvasSize, Size referenceImageSize)
+    {
+        ImageRect nextDimensions = WithNewSize(ImageRect, canvasSize, referenceImageSize, imageScale);
+        return WithNewPosition(nextDimensions, canvasSize);
+    }
+
+    private static ImageRect WithNewPosition(ImageRect imageRect, Size canvasSize)
+    {
+        int x = (int) (canvasSize.Width / 2 - imageRect.Width / 2);
+        int y = (int) (canvasSize.Height / 2 - imageRect.Height / 2);
+        return imageRect.WithX(x).WithY(y);
+    }
+
+    private static ImageRect WithNewSize(ImageRect current, Size canvasSize, Size referenceImageSize, double scale)
+    {
+        double maxWidth = canvasSize.Width;
+        double maxHeight = canvasSize.Height;
+        
+        double imageWidth = referenceImageSize.Width;
+        double imageHeight = referenceImageSize.Height;
+
+        if (imageWidth <= maxWidth && imageHeight <= maxHeight)
+        {
+            int width = (int) (imageWidth * (scale / 100.0));
+            int height = (int) (imageHeight * (scale / 100.0));
+            return current.WithWidth(width).WithHeight(height);
+        }
+
+        double ratio;
+        if (imageWidth > imageHeight)
+        {
+            ratio = maxWidth / imageWidth;
+        }
+        else
+        {
+            ratio = maxHeight / imageHeight;
+        }
+
+        int newWidth = (int) (imageWidth * ratio * (scale / 100.0));
+        int newHeight = (int) (imageHeight * ratio * (scale / 100.0));
+
+        return current.WithWidth(newWidth)
+            .WithHeight(newHeight);
     }
 
     private void PreviousImage()

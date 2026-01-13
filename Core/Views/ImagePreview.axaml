@@ -11,51 +11,64 @@
 
     <DockPanel IsVisible="{Binding IsImageSelected}">
 
-        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
+        <StackPanel Orientation="Horizontal"
+            DockPanel.Dock="Top"
+            IsVisible="{Binding !IsSlideshowRunning}">
+
             <Button Command="{Binding StopSlideshowCommand}"
                 x:Name="StopSlideshowButton"
                 IsVisible="false">Stop Slideshow</Button>
 
             <TextBlock Text="{Binding SelectedImage.Path.PathString}"
-                IsVisible="{Binding !IsSlideshowRunning}"
                 Margin="8,6,8,6"></TextBlock>
         </StackPanel>
 
-        <StackPanel DockPanel.Dock="Bottom" Classes="NavPanel">
-
+        <Grid ColumnDefinitions="10*,80*,10*">
             <Button Classes="LeftArrow NavigationArrow"
                 Command="{Binding PreviousImageCommand}"
                 x:Name="PreviousButton"
                 IsEnabled="{Binding IsNavigationEnabled}"
-                IsVisible="{Binding !IsSlideshowRunning}">
+                IsVisible="{Binding !IsSlideshowRunning}"
+                Grid.Row="0"
+                Grid.Column="0">
                 <Button.Content>
                     <TextBlock FontSize="30">&lt;</TextBlock>
                 </Button.Content>
             </Button>
 
-            <Grid>
-                <Image Source="{Binding SelectedImage.Image^}">
-                    <Image.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="Show in Explorer" Command="{Binding ShowInExplorerCommand}" />
-                            <MenuItem Header="Start Slideshow" Command="{Binding StartSlideshowCommand}" />
-                            <MenuItem Header="Delete" Command="{Binding DeleteImageCommand}" />
-                        </ContextMenu>
-                    </Image.ContextMenu>
-                </Image>
-            </Grid>
+            <Canvas Grid.Row="0" Grid.Column="1" x:Name="ImageCanvas">
+                <Canvas.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Show in Explorer" Command="{Binding ShowInExplorerCommand}" />
+                        <MenuItem Header="Start Slideshow" Command="{Binding StartSlideshowCommand}" />
+                        <MenuItem Header="Delete" Command="{Binding DeleteImageCommand}" />
+                    </ContextMenu>
+                </Canvas.ContextMenu>
+
+                <Image Source="{Binding SelectedImage.Image^}"
+                    Width="{Binding ImageRect.Width}"
+                    Height="{Binding ImageRect.Height}"
+                    Canvas.Top="{Binding ImageRect.Y}"
+                    Canvas.Left="{Binding ImageRect.X}" />
+                
+                <Image x:Name="ReferenceImage"
+                    Source="{Binding SelectedImage.Image^}"
+                    Canvas.Top="1000000"
+                    Canvas.Left="1000000" />
+            </Canvas>
 
             <Button Classes="RightArrow NavigationArrow"
                 Command="{Binding NextImageCommand}"
                 x:Name="NextButton"
                 IsEnabled="{Binding IsNavigationEnabled}"
-                IsVisible="{Binding !IsSlideshowRunning}">
+                IsVisible="{Binding !IsSlideshowRunning}"
+                Grid.Row="0"
+                Grid.Column="2">
                 <Button.Content>
                     <TextBlock FontSize="30">&gt;</TextBlock>
                 </Button.Content>
             </Button>
-
-        </StackPanel>
+        </Grid>
     </DockPanel>
 
 </UserControl>

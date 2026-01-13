@@ -20,30 +20,43 @@
         <StyleInclude Source="/Core/Styles/Styles.axaml" />
     </Window.Styles>
     
-    <DockPanel>
+    <Grid x:Name="MainGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10*"></RowDefinition>
+            <RowDefinition Height="90*"></RowDefinition>
+        </Grid.RowDefinitions>
+
         <TabStrip SelectedIndex="{Binding SelectedTabIndex}"
             Classes="MainTabControl"
             IsVisible="{Binding !IsSlideshowRunning}"
-            DockPanel.Dock="Top">
+            Grid.Row="0"
+            Grid.Column="0">
+
             <TabStripItem>Explorer</TabStripItem>
             <TabStripItem>Preview</TabStripItem>
             <TabStripItem>Settings</TabStripItem>
         </TabStrip>
 
-        <Panel IsVisible="{Binding ExplorerView}" DockPanel.Dock="Bottom">
+        <Panel IsVisible="{Binding ExplorerView}"
+            Grid.Row="1"
+            Grid.Column="0">
             <Grid ColumnDefinitions="25*,75*">
                 <view:ExplorerView Grid.Row="0" Grid.Column="0" />
                 <view:FolderPreview Grid.Row="0" Grid.Column="1" />
             </Grid>
         </Panel>
 
-        <Panel IsVisible="{Binding ImageView}" DockPanel.Dock="Bottom">
+        <Panel IsVisible="{Binding ImageView}"
+            Grid.Row="1"
+            Grid.Column="0">
             <view:ImagePreview />
         </Panel>
 
-        <Panel IsVisible="{Binding SettingsView}" DockPanel.Dock="Bottom">
+        <Panel IsVisible="{Binding SettingsView}"
+            Grid.Row="1"
+            Grid.Column="0">
             <view:SettingsView />
         </Panel>
-    </DockPanel>
+    </Grid>
 
 </Window>

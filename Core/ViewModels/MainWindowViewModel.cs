@@ -11,11 +11,27 @@ using ReactiveUI;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    private static class RowHeights
+    {
+        public static class Normal
+        {
+            public static readonly int FirstRow = 10;
+            public static readonly int SecondRow = 90;
+        }
+
+        public static class Slideshow
+        {
+            public static readonly int FirstRow;
+            public static readonly int SecondRow = 100;
+        }
+    }
+
     private readonly ConsoleLogger<MainWindowViewModel> logger = new();
 
     private readonly MainWindow mainWindow;
     private readonly string[] launchArguments;
     private WindowState? previousWindowState;
+    private Grid mainGrid;
 
     public MainWindowViewModel(MainWindow mainWindow, string[] launchArguments)
     {
@@ -38,10 +54,11 @@ public partial class MainWindowViewModel : ViewModelBase
                 () => SelectedTabIndex = AppState.Instance.SelectedTabIndex
             },
         });
+
+        mainGrid = mainWindow.FindControl<Grid>("MainGrid")!;
     }
 
     private bool explorerView = true;
-
     public bool ExplorerView
     {
         get => explorerView;
@@ -49,7 +66,6 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     private bool imageView;
-
     public bool ImageView
     {
         get => imageView;
@@ -57,7 +73,6 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     private bool settingsView;
-
     public bool SettingsView
     {
         get => settingsView;
@@ -65,7 +80,6 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     private bool isSlideshowRunning;
-
     public bool IsSlideshowRunning
     {
         get => isSlideshowRunning;
@@ -75,11 +89,18 @@ public partial class MainWindowViewModel : ViewModelBase
             if (value)
             {
                 logger.Log("Slideshow started. Making window full screen.");
+
+                mainGrid.RowDefinitions[0].Height = new GridLength(RowHeights.Slideshow.FirstRow, GridUnitType.Star);
+                mainGrid.RowDefinitions[1].Height = new GridLength(RowHeights.Slideshow.SecondRow, GridUnitType.Star);
+
                 previousWindowState = mainWindow.WindowState;
                 mainWindow.WindowState = WindowState.FullScreen;
             }
             else
             {
+                mainGrid.RowDefinitions[0].Height = new GridLength(RowHeights.Normal.FirstRow, GridUnitType.Star);
+                mainGrid.RowDefinitions[1].Height = new GridLength(RowHeights.Normal.SecondRow, GridUnitType.Star);
+
                 if (previousWindowState != null)
                 {
                     logger.Log($"Slideshow stopped. Restoring window state: [{previousWindowState}]");
@@ -96,7 +117,6 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     private int selectedTabIndex = AppState.Instance.SelectedTabIndex;
-
     public int SelectedTabIndex
     {
         get => selectedTabIndex;
@@ -181,6 +201,9 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
                 logger.Log($"Setting initial selected image to [{resource.Path.PathString}].");
 
+                // Delay the simulated "selection" of an image after the loading parent folder.
+                // Resolves an issue where the app may stay on the Explorer tab instead of
+                // navigating to the Image tab.
                 Task.Run(async () =>
                 {
                     await Task.Delay(500);
