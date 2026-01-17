@@ -23,7 +23,13 @@
                 Margin="8,6,8,6"></TextBlock>
         </StackPanel>
 
-        <Grid ColumnDefinitions="10*,80*,10*">
+        <Grid x:Name="CanvasGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5*"></ColumnDefinition>
+                <ColumnDefinition Width="90*"></ColumnDefinition>
+                <ColumnDefinition Width="5*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+
             <Button Classes="LeftArrow NavigationArrow"
                 Command="{Binding PreviousImageCommand}"
                 x:Name="PreviousButton"
@@ -36,7 +42,11 @@
                 </Button.Content>
             </Button>
 
-            <Canvas Grid.Row="0" Grid.Column="1" x:Name="ImageCanvas">
+            <Canvas x:Name="ImageCanvas"
+                Grid.Row="0"
+                Grid.Column="1"
+                ZIndex="-1">
+
                 <Canvas.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="Show in Explorer" Command="{Binding ShowInExplorerCommand}" />

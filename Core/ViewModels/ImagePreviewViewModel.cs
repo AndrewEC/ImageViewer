@@ -19,6 +19,9 @@ using ReactiveUI;
 public partial class ImagePreviewViewModel : ViewModelBase
 #pragma warning restore CA1001
 {
+    private static readonly int[] NormalColumnSizes = [10, 80, 10];
+    private static readonly int[] SlideshowColumnSizes = [0, 100, 0];
+
     private const double DefaultScale = 100;
     private const double MaxScale = DefaultScale * 2;
     private const double MinScale = DefaultScale / 2;
@@ -28,6 +31,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
     private Timer? slideshowTimer;
     private readonly Canvas canvas;
     private readonly Image referenceImage;
+    private readonly Grid canvasGrid;
     private double imageScale = DefaultScale;
 
     public ImagePreviewViewModel(ImagePreview parent)
@@ -58,6 +62,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
         Button nextButton = parent.FindControl<Button>("NextButton")!;
         Button previousButton = parent.FindControl<Button>("PreviousButton")!;
         Button stopSlideshowButton = parent.FindControl<Button>("StopSlideshowButton")!;
+        canvasGrid = parent.FindControl<Grid>("CanvasGrid")!;
 
         canvas = parent.FindControl<Canvas>("ImageCanvas")!;
         canvas.SizeChanged += OnCanvasSizeChanged;
@@ -115,10 +120,12 @@ public partial class ImagePreviewViewModel : ViewModelBase
             if (value)
             {
                 StartSlideshow();
+                GridUtil.ResizeColumns(canvasGrid, SlideshowColumnSizes);
             }
             else
             {
                 StopSlideshow();
+                GridUtil.ResizeColumns(canvasGrid, NormalColumnSizes);
             }
         }
     }
@@ -141,7 +148,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
             return;
         }
 
-        SetScale(imageScale + e.Delta.Y * 3);
+        SetScale(imageScale + e.Delta.Y * 5);
     }
 
     private void SetScale(double nextScale)

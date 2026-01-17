@@ -11,20 +11,8 @@ using ReactiveUI;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private static class RowHeights
-    {
-        public static class Normal
-        {
-            public static readonly int FirstRow = 10;
-            public static readonly int SecondRow = 90;
-        }
-
-        public static class Slideshow
-        {
-            public static readonly int FirstRow;
-            public static readonly int SecondRow = 100;
-        }
-    }
+    private static readonly int[] NormalRowHeights = [10, 90];
+    private static readonly int[] SlideshowRowHeights = [0, 100];
 
     private readonly ConsoleLogger<MainWindowViewModel> logger = new();
 
@@ -90,16 +78,14 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 logger.Log("Slideshow started. Making window full screen.");
 
-                mainGrid.RowDefinitions[0].Height = new GridLength(RowHeights.Slideshow.FirstRow, GridUnitType.Star);
-                mainGrid.RowDefinitions[1].Height = new GridLength(RowHeights.Slideshow.SecondRow, GridUnitType.Star);
+                GridUtil.ResizeRows(mainGrid, SlideshowRowHeights);
 
                 previousWindowState = mainWindow.WindowState;
                 mainWindow.WindowState = WindowState.FullScreen;
             }
             else
             {
-                mainGrid.RowDefinitions[0].Height = new GridLength(RowHeights.Normal.FirstRow, GridUnitType.Star);
-                mainGrid.RowDefinitions[1].Height = new GridLength(RowHeights.Normal.SecondRow, GridUnitType.Star);
+                GridUtil.ResizeRows(mainGrid, NormalRowHeights);
 
                 if (previousWindowState != null)
                 {
