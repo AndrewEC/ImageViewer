@@ -1,4 +1,4 @@
-namespace ImageViewer.Core.Events;
+namespace ImageViewer.Core.Preview;
 
 using System;
 using Avalonia;

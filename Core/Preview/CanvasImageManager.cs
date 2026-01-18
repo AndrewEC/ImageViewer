@@ -1,10 +1,10 @@
-namespace ImageViewer.Core.Events;
+namespace ImageViewer.Core.Preview;
 
 using System;
 using Avalonia;
 using ImageViewer.Core.ViewModels;
 
-public sealed class CanvasImageSizeManager
+public sealed class CanvasImageManager
 {
 
     public const double DefaultScale = 100;

@@ -1,4 +1,4 @@
-namespace ImageViewer.Core.Events;
+namespace ImageViewer.Core.Preview;
 
 using System;
 using Avalonia;
@@ -47,7 +47,7 @@ public sealed class DragManager
 
     private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (sender != parentCanvas)
+        if (sender != parentCanvas || !e.Properties.IsLeftButtonPressed)
         {
             return;
         }

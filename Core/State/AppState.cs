@@ -8,7 +8,6 @@ using ImageViewer.Core.Utils;
 
 public sealed class AppState : INotifyPropertyChanged
 {
-    private static readonly ConsoleLogger<AppState> logger = new();
     public static readonly AppState Instance = new();
 
     private List<FileResource> rootResources = [];
@@ -19,14 +18,12 @@ public sealed class AppState : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private bool isSlideshowRunning;
-
     public bool IsSlideshowRunning
     {
         get => isSlideshowRunning;
         set
         {
             isSlideshowRunning = value;
-            logger.Log($"[{nameof(IsSlideshowRunning)}] value updated to [{value}].");
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSlideshowRunning)));
         }
     }
@@ -42,10 +39,10 @@ public sealed class AppState : INotifyPropertyChanged
     }
 
     private FileResource? selectedFolder;
-
     public FileResource? SelectedFolder
     {
         get => selectedFolder;
+
         set
         {
             selectedFolder = value;
@@ -55,10 +52,10 @@ public sealed class AppState : INotifyPropertyChanged
     }
 
     private List<ImageResource> selectedFolderResources = [];
-
     public List<ImageResource> SelectedFolderResources
     {
         get => selectedFolderResources;
+
         set
         {
             selectedFolderResources = value;
@@ -68,10 +65,10 @@ public sealed class AppState : INotifyPropertyChanged
     }
 
     private ImageResource? selectedImage;
-
     public ImageResource? SelectedImage
     {
         get => selectedImage;
+
         set
         {
             selectedImage = value;
@@ -84,10 +81,10 @@ public sealed class AppState : INotifyPropertyChanged
     }
 
     private int selectedTabIndex;
-
     public int SelectedTabIndex
     {
         get => selectedTabIndex;
+
         set
         {
             selectedTabIndex = value;
@@ -98,18 +95,18 @@ public sealed class AppState : INotifyPropertyChanged
     public void RemoveCurrentlySelectedImageFromFolderResources()
         => RemoveImageFromSelectedFolder(SelectedImage);
 
-    public void RemoveImageFromSelectedFolder(ImageResource? imageResource)
+    public void RemoveImageFromSelectedFolder(ImageResource? resourceToRemove)
     {
-        if (imageResource == null)
+        if (resourceToRemove == null)
         {
             return;
         }
 
-        SelectedFolderResources = [.. SelectedFolderResources.Where(r => !r.Path.Equals(imageResource.Path))];
+        SelectedFolderResources = [.. SelectedFolderResources.Where(r => !r.Path.Equals(resourceToRemove.Path))];
 
         if (SelectedFolderResources.Count > 0)
         {
-            if (SelectedImage != null && SelectedImage.Path.Equals(imageResource.Path))
+            if (SelectedImage != null && SelectedImage.Path.Equals(resourceToRemove.Path))
             {
                 SelectedImage = SelectedFolderResources[0];
             }
@@ -127,6 +124,7 @@ public sealed class AppState : INotifyPropertyChanged
         SelectedFolder = null;
 
         rootResources = Scan.GetDriveRootResources();
+
         Scan.ExpandPath(startingPath, rootResources);
 
         SelectedFolder = Scan.FindFileResourceMatchingPath(startingPath, rootResources);

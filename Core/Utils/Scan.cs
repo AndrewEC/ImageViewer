@@ -30,7 +30,7 @@ public static class Scan
 
         return GetFoldersToScan(resource.Path, scanDepth)
             .SelectMany(folder => folder.GetChildFiles())
-            .Where(file => IsPotentiallyImageFile(file))
+            .Where(IsPotentiallyImageFile)
             .OrderBy(file => file, comparer)
             .Select(file => new ImageResource(file))
             .ToList();
@@ -41,9 +41,9 @@ public static class Scan
     private static List<PathLike> GetFoldersToScan(PathLike root, int scanDepth)
     {
         List<List<PathLike>> folders = [[root]];
-        for (int i = 1; i < scanDepth; i++)
+        for (int i = 0; i < scanDepth - 1; i++)
         {
-            List<PathLike> pathsToScan = folders[i - 1];
+            List<PathLike> pathsToScan = folders[i];
             if (pathsToScan.Count == 0)
             {
                 break;

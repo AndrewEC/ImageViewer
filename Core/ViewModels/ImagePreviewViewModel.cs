@@ -1,15 +1,13 @@
 namespace ImageViewer.Core.ViewModels;
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reactive;
 using System.Timers;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using ImageViewer.Core.Config;
-using ImageViewer.Core.Events;
+using ImageViewer.Core.Preview;
 using ImageViewer.Core.Models;
 using ImageViewer.Core.Utils;
 using ImageViewer.Core.Views;
@@ -31,7 +29,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
     private readonly Grid canvasGrid;
 
     private readonly DragManager canvasDragManager;
-    private readonly CanvasImageSizeManager canvasImageSizeManager;
+    private readonly CanvasImageManager canvasImageManager;
 
     private Timer? slideshowTimer;
 
@@ -75,8 +73,8 @@ public partial class ImagePreviewViewModel : ViewModelBase
         canvasDragManager = new DragManager(canvas);
         canvasDragManager.ElementDragged += OnCanvasDragged;
 
-        canvasImageSizeManager = new CanvasImageSizeManager();
-        canvasImageSizeManager.ImageRectChanged += OnImageRectChanged;
+        canvasImageManager = new CanvasImageManager();
+        canvasImageManager.ImageRectChanged += OnImageRectChanged;
 
         HotKeyManager.SetHotKey(nextButton, new KeyGesture(Key.D));
         HotKeyManager.SetHotKey(previousButton, new KeyGesture(Key.A));
@@ -123,7 +121,8 @@ public partial class ImagePreviewViewModel : ViewModelBase
         set
         {
             this.RaiseAndSetIfChanged(ref isSlideshowRunning, value);
-            canvasImageSizeManager.ImageScale = CanvasImageSizeManager.DefaultScale;
+            canvasImageManager.Reset();
+            canvasDragManager.Reset();
             if (value)
             {
                 StartSlideshow();
@@ -147,13 +146,13 @@ public partial class ImagePreviewViewModel : ViewModelBase
             IsImageSelected = value != null;
 
             canvasDragManager.Reset();
-            canvasImageSizeManager.Reset();
+            canvasImageManager.Reset();
         }
     }
 
     private void OnImageRectChanged(object? sender, ImageRectChangedEventArgs e)
     {
-        if (sender != canvasImageSizeManager)
+        if (sender != canvasImageManager)
         {
             return;
         }
@@ -163,22 +162,22 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
     private void OnCanvasScroll(object? sender, PointerWheelEventArgs e)
     {
-        if (sender != canvas)
+        if (sender != canvas || isSlideshowRunning)
         {
             return;
         }
 
-        canvasImageSizeManager.ImageScale += e.Delta.Y * 5;
+        canvasImageManager.ImageScale += e.Delta.Y * 5;
     }
 
     private void OnCanvasDragged(object? sender, InputElementDraggedEventArgs e)
     {
-        if (sender != canvasDragManager)
+        if (sender != canvasDragManager || isSlideshowRunning)
         {
             return;
         }
 
-        canvasImageSizeManager.Offset = e.Delta;
+        canvasImageManager.Offset = e.Delta;
     }
 
     private void OnReferenceImageSizeChanged(object? sender, SizeChangedEventArgs e)
@@ -188,7 +187,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
             return;
         }
 
-        canvasImageSizeManager.ImageSize = e.NewSize;
+        canvasImageManager.ImageSize = e.NewSize;
     }
 
     private void OnCanvasSizeChanged(object? sender, SizeChangedEventArgs e)
@@ -198,7 +197,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
             return;
         }
 
-        canvasImageSizeManager.CanvasSize = e.NewSize;
+        canvasImageManager.CanvasSize = e.NewSize;
     }
 
     private void PreviousImage()

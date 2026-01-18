@@ -36,9 +36,11 @@ public sealed class ImageCache
         lock (SyncLock)
         {
             logger.Log("Timer ticked. Checking for expired images...");
+
+            long currentTime = CurrentTimestamp();
             foreach (KeyValuePair<string, CacheEntry> entry in cache)
             {
-                if (HasExpired(entry.Value.Timestamp))
+                if (currentTime - entry.Value.Timestamp > CacheEntryTimeToLiveMillis)
                 {
                     logger.Log($"Disposing of expired image: [{entry.Key}].");
                     cache.Remove(entry.Key);
@@ -55,20 +57,16 @@ public sealed class ImageCache
         }
     }
 
-    private static bool HasExpired(long entryTimestamp)
-        => CurrentTimestamp() - entryTimestamp > CacheEntryTimeToLiveMillis;
-
     private static long CurrentTimestamp() => DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     public Task<Bitmap?> LoadImage(string path)
-        => Task.Run(() => DoLoadImage(path, false));
+        => Task.Run(() => DoLoadImage(path, ImageKeyPrefix));
 
     public Task<Bitmap?> LoadThumbnail(string path)
-        => Task.Run(() => DoLoadImage(path, true));
+        => Task.Run(() => DoLoadImage(path, ThumbnailKeyPrefix));
 
-    private Bitmap? DoLoadImage(string path, bool thumbnail)
+    private Bitmap? DoLoadImage(string path, string keyPrefix)
     {
-        string keyPrefix = thumbnail ? ThumbnailKeyPrefix : ImageKeyPrefix;
         string cacheKey = keyPrefix + path;
 
         logger.Log($"Loading image [{path}] with key [{cacheKey}]");
@@ -88,7 +86,7 @@ public sealed class ImageCache
         {
             using (FileStream stream = File.OpenRead(path))
             {
-                if (thumbnail)
+                if (keyPrefix == ThumbnailKeyPrefix)
                 {
                     newImage = Bitmap.DecodeToHeight(stream, ThumbnailHeight, BitmapInterpolationMode.LowQuality);
                 }
