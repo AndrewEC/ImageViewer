@@ -28,11 +28,15 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
     private readonly ConsoleLogger<ImagePreviewViewModel> logger = new();
 
-    private Timer? slideshowTimer;
     private readonly Canvas canvas;
     private readonly Image referenceImage;
     private readonly Grid canvasGrid;
+    private readonly DragManager canvasDragManager;
+
+    private Timer? slideshowTimer;
     private double imageScale = DefaultScale;
+    private double offsetX;
+    private double offsetY;
 
     public ImagePreviewViewModel(ImagePreview parent)
     {
@@ -70,6 +74,9 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
         referenceImage = parent.FindControl<Image>("ReferenceImage")!;
         referenceImage.SizeChanged += OnReferenceImageSizeChanged;
+
+        canvasDragManager = new DragManager(canvas);
+        canvasDragManager.ElementDragged += OnCanvasDragged;
 
         HotKeyManager.SetHotKey(nextButton, new KeyGesture(Key.D));
         HotKeyManager.SetHotKey(previousButton, new KeyGesture(Key.A));
@@ -138,6 +145,12 @@ public partial class ImagePreviewViewModel : ViewModelBase
         {
             this.RaiseAndSetIfChanged(ref selectedImage, value);
             IsImageSelected = value != null;
+
+            imageScale = 100;
+            offsetX = 0;
+            offsetY = 0;
+            canvasDragManager.Reset();
+            ResizeImage();
         }
     }
 
@@ -149,6 +162,19 @@ public partial class ImagePreviewViewModel : ViewModelBase
         }
 
         SetScale(imageScale + e.Delta.Y * 5);
+    }
+
+    private void OnCanvasDragged(object? sender, InputElementDraggedEventArgs e)
+    {
+        if (sender != canvasDragManager)
+        {
+            return;
+        }
+
+        offsetX = e.Delta.X;
+        offsetY = e.Delta.Y;
+
+        ImageRect = ResizeImage();
     }
 
     private void SetScale(double nextScale)
@@ -166,9 +192,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
             return;
         }
 
-        Size canvasSize = new(canvas.Bounds.Width, canvas.Bounds.Height);
-        Size referenceImageSize = new(referenceImage.Bounds.Width, referenceImage.Bounds.Height);
-        ImageRect = ResizeImage(canvasSize, referenceImageSize);
+        ImageRect = ResizeImage();
     }
 
     private void OnReferenceImageSizeChanged(object? sender, SizeChangedEventArgs e)
@@ -177,8 +201,6 @@ public partial class ImagePreviewViewModel : ViewModelBase
         {
             return;
         }
-
-        imageScale = 100;
 
         Size canvasSize = new(canvas.Bounds.Width, canvas.Bounds.Height);
         Size referenceImageSize = e.NewSize;
@@ -199,16 +221,23 @@ public partial class ImagePreviewViewModel : ViewModelBase
         ImageRect = ResizeImage(canvasSize, referenceImageSize);
     }
 
+    private ImageRect ResizeImage()
+    {
+        Size canvasSize = new(canvas.Bounds.Width, canvas.Bounds.Height);
+        Size referenceImageSize = new(referenceImage.Bounds.Width, referenceImage.Bounds.Height);
+        return ResizeImage(canvasSize, referenceImageSize);
+    }
+
     private ImageRect ResizeImage(Size canvasSize, Size referenceImageSize)
     {
         ImageRect nextDimensions = WithNewSize(ImageRect, canvasSize, referenceImageSize, imageScale);
         return WithNewPosition(nextDimensions, canvasSize);
     }
 
-    private static ImageRect WithNewPosition(ImageRect imageRect, Size canvasSize)
+    private ImageRect WithNewPosition(ImageRect imageRect, Size canvasSize)
     {
-        int x = (int) (canvasSize.Width / 2 - imageRect.Width / 2);
-        int y = (int) (canvasSize.Height / 2 - imageRect.Height / 2);
+        int x = (int) (canvasSize.Width / 2 - imageRect.Width / 2 + offsetX);
+        int y = (int) (canvasSize.Height / 2 - imageRect.Height / 2 + offsetY);
         return imageRect.WithX(x).WithY(y);
     }
 

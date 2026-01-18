@@ -45,7 +45,8 @@
             <Canvas x:Name="ImageCanvas"
                 Grid.Row="0"
                 Grid.Column="1"
-                ZIndex="-1">
+                ZIndex="-1"
+                ClipToBounds="True">
 
                 <Canvas.ContextMenu>
                     <ContextMenu>
