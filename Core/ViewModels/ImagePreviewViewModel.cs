@@ -1,5 +1,6 @@
 namespace ImageViewer.Core.ViewModels;
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reactive;
@@ -8,6 +9,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using ImageViewer.Core.Config;
+using ImageViewer.Core.Events;
 using ImageViewer.Core.Models;
 using ImageViewer.Core.Utils;
 using ImageViewer.Core.Views;
@@ -22,21 +24,16 @@ public partial class ImagePreviewViewModel : ViewModelBase
     private static readonly int[] NormalColumnSizes = [10, 80, 10];
     private static readonly int[] SlideshowColumnSizes = [0, 100, 0];
 
-    private const double DefaultScale = 100;
-    private const double MaxScale = DefaultScale * 2;
-    private const double MinScale = DefaultScale / 2;
-
     private readonly ConsoleLogger<ImagePreviewViewModel> logger = new();
 
     private readonly Canvas canvas;
     private readonly Image referenceImage;
     private readonly Grid canvasGrid;
+
     private readonly DragManager canvasDragManager;
+    private readonly CanvasImageSizeManager canvasImageSizeManager;
 
     private Timer? slideshowTimer;
-    private double imageScale = DefaultScale;
-    private double offsetX;
-    private double offsetY;
 
     public ImagePreviewViewModel(ImagePreview parent)
     {
@@ -77,6 +74,9 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
         canvasDragManager = new DragManager(canvas);
         canvasDragManager.ElementDragged += OnCanvasDragged;
+
+        canvasImageSizeManager = new CanvasImageSizeManager();
+        canvasImageSizeManager.ImageRectChanged += OnImageRectChanged;
 
         HotKeyManager.SetHotKey(nextButton, new KeyGesture(Key.D));
         HotKeyManager.SetHotKey(previousButton, new KeyGesture(Key.A));
@@ -123,7 +123,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
         set
         {
             this.RaiseAndSetIfChanged(ref isSlideshowRunning, value);
-            SetScale(DefaultScale);
+            canvasImageSizeManager.ImageScale = CanvasImageSizeManager.DefaultScale;
             if (value)
             {
                 StartSlideshow();
@@ -146,12 +146,19 @@ public partial class ImagePreviewViewModel : ViewModelBase
             this.RaiseAndSetIfChanged(ref selectedImage, value);
             IsImageSelected = value != null;
 
-            imageScale = 100;
-            offsetX = 0;
-            offsetY = 0;
             canvasDragManager.Reset();
-            ResizeImage();
+            canvasImageSizeManager.Reset();
         }
+    }
+
+    private void OnImageRectChanged(object? sender, ImageRectChangedEventArgs e)
+    {
+        if (sender != canvasImageSizeManager)
+        {
+            return;
+        }
+
+        ImageRect = e.Rect;
     }
 
     private void OnCanvasScroll(object? sender, PointerWheelEventArgs e)
@@ -161,7 +168,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
             return;
         }
 
-        SetScale(imageScale + e.Delta.Y * 5);
+        canvasImageSizeManager.ImageScale += e.Delta.Y * 5;
     }
 
     private void OnCanvasDragged(object? sender, InputElementDraggedEventArgs e)
@@ -171,28 +178,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
             return;
         }
 
-        offsetX = e.Delta.X;
-        offsetY = e.Delta.Y;
-
-        ImageRect = ResizeImage();
-    }
-
-    private void SetScale(double nextScale)
-    {
-        imageScale = nextScale;
-
-        if (imageScale > MaxScale)
-        {
-            imageScale = MaxScale;
-            return;
-        }
-        else if (imageScale < MinScale)
-        {
-            imageScale = MinScale;
-            return;
-        }
-
-        ImageRect = ResizeImage();
+        canvasImageSizeManager.Offset = e.Delta;
     }
 
     private void OnReferenceImageSizeChanged(object? sender, SizeChangedEventArgs e)
@@ -202,10 +188,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
             return;
         }
 
-        Size canvasSize = new(canvas.Bounds.Width, canvas.Bounds.Height);
-        Size referenceImageSize = e.NewSize;
-
-        ImageRect = ResizeImage(canvasSize, referenceImageSize);
+        canvasImageSizeManager.ImageSize = e.NewSize;
     }
 
     private void OnCanvasSizeChanged(object? sender, SizeChangedEventArgs e)
@@ -215,62 +198,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
             return;
         }
 
-        Size canvasSize = e.NewSize;
-        Size referenceImageSize = new(referenceImage.Bounds.Width, referenceImage.Bounds.Height);
-
-        ImageRect = ResizeImage(canvasSize, referenceImageSize);
-    }
-
-    private ImageRect ResizeImage()
-    {
-        Size canvasSize = new(canvas.Bounds.Width, canvas.Bounds.Height);
-        Size referenceImageSize = new(referenceImage.Bounds.Width, referenceImage.Bounds.Height);
-        return ResizeImage(canvasSize, referenceImageSize);
-    }
-
-    private ImageRect ResizeImage(Size canvasSize, Size referenceImageSize)
-    {
-        ImageRect nextDimensions = WithNewSize(ImageRect, canvasSize, referenceImageSize, imageScale);
-        return WithNewPosition(nextDimensions, canvasSize);
-    }
-
-    private ImageRect WithNewPosition(ImageRect imageRect, Size canvasSize)
-    {
-        int x = (int) (canvasSize.Width / 2 - imageRect.Width / 2 + offsetX);
-        int y = (int) (canvasSize.Height / 2 - imageRect.Height / 2 + offsetY);
-        return imageRect.WithX(x).WithY(y);
-    }
-
-    private static ImageRect WithNewSize(ImageRect current, Size canvasSize, Size referenceImageSize, double scale)
-    {
-        double maxWidth = canvasSize.Width;
-        double maxHeight = canvasSize.Height;
-        
-        double imageWidth = referenceImageSize.Width;
-        double imageHeight = referenceImageSize.Height;
-
-        if (imageWidth <= maxWidth && imageHeight <= maxHeight)
-        {
-            int width = (int) (imageWidth * (scale / 100.0));
-            int height = (int) (imageHeight * (scale / 100.0));
-            return current.WithWidth(width).WithHeight(height);
-        }
-
-        double ratio;
-        if (imageWidth > imageHeight)
-        {
-            ratio = maxWidth / imageWidth;
-        }
-        else
-        {
-            ratio = maxHeight / imageHeight;
-        }
-
-        int newWidth = (int) (imageWidth * ratio * (scale / 100.0));
-        int newHeight = (int) (imageHeight * ratio * (scale / 100.0));
-
-        return current.WithWidth(newWidth)
-            .WithHeight(newHeight);
+        canvasImageSizeManager.CanvasSize = e.NewSize;
     }
 
     private void PreviousImage()

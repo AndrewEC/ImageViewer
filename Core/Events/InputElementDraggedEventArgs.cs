@@ -1,4 +1,4 @@
-namespace ImageViewer.Core.Utils;
+namespace ImageViewer.Core.Events;
 
 using System;
 using Avalonia;
