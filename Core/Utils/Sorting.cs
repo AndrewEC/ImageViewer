@@ -37,8 +37,13 @@ public static class Sorting
         public int Compare(PathLike? x, PathLike? y)
         {
             int? x1 = TryParseInt(x?.GetStem());
+            if (x1 == null)
+            {
+                return naturalComparer.Compare(x, y);
+            }
+
             int? y1 = TryParseInt(y?.GetStem());
-            if (x1 == null || y1 == null)
+            if (y1 == null)
             {
                 return naturalComparer.Compare(x, y);
             }

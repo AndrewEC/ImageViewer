@@ -3,15 +3,29 @@ namespace ImageViewer.Core.Config;
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using ImageViewer.Core.Models;
 using ImageViewer.Core.Utils;
 
+#pragma warning disable CA1852
+[JsonSerializable(typeof(Config))]
+[JsonSerializable(typeof(SortMethod))]
+[JsonSerializable(typeof(int))]
+internal partial class ConfigContext : JsonSerializerContext
+{
+}
+#pragma warning restore CA1852
+
 public class ConfigState
 {
-    public static readonly ConfigState Instance = new();
 
+    public static readonly ConfigState Instance = new();
     
+    private static readonly JsonSerializerOptions ConfigSerializerOptions = new()
+    {
+        TypeInfoResolver = ConfigContext.Default
+    };
     private static readonly Lock SyncLock = new();
 
     private static readonly string AppName = "ImageViewer";
@@ -40,7 +54,7 @@ public class ConfigState
             try
             {
                 string configJson = File.ReadAllText(configPath.PathString);
-                currentConfig = JsonSerializer.Deserialize<Config>(configJson)!;
+                currentConfig = JsonSerializer.Deserialize<Config>(configJson, ConfigSerializerOptions)!;
             }
             catch (Exception e)
             {
@@ -59,7 +73,7 @@ public class ConfigState
             PathLike configPath = CreateAndGetConfigFilePath();
             logger.Log($"Saving config to: [{configPath}]");
 
-            string configJson = JsonSerializer.Serialize(nextConfig);
+            string configJson = JsonSerializer.Serialize(nextConfig, ConfigSerializerOptions);
             File.WriteAllText(configPath.PathString, configJson);
 
             logger.Log($"Updated configuration: [{configJson}]");
@@ -92,7 +106,7 @@ public class ConfigState
             {
                 logger.Log($"Config file not found. Creating default config at: [{configFile}]");
                 Config defaultConfig = new();
-                string defaultConfigJson = JsonSerializer.Serialize(defaultConfig);
+                string defaultConfigJson = JsonSerializer.Serialize(defaultConfig, ConfigSerializerOptions);
                 logger.Log($"Writing default config: [{defaultConfigJson}]");
                 File.WriteAllText(configFile.PathString, defaultConfigJson);
             }
