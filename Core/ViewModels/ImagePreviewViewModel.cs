@@ -130,7 +130,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
             }
             else
             {
-                StopSlideshow();
+                StopSlideshowTimer();
                 GridUtil.ResizeColumns(canvasGrid, NormalColumnSizes);
             }
         }
@@ -266,8 +266,6 @@ public partial class ImagePreviewViewModel : ViewModelBase
         slideshowTimer.AutoReset = true;
         slideshowTimer.Enabled = true;
     }
-
-    private void StopSlideshow() => StopSlideshowTimer();
 
     private void StopSlideshowTimer()
     {

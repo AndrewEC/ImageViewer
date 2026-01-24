@@ -40,10 +40,13 @@
         <Panel IsVisible="{Binding ExplorerView}"
             Grid.Row="1"
             Grid.Column="0">
-            <Grid ColumnDefinitions="25*,75*">
+
+            <Grid ColumnDefinitions="25*,1*,74*">
                 <view:ExplorerView Grid.Row="0" Grid.Column="0" />
-                <view:FolderPreview Grid.Row="0" Grid.Column="1" />
+                <GridSplitter Grid.Row="0" Grid.Column="1" Background="Gray" ResizeDirection="Columns"/>
+                <view:FolderPreview Grid.Row="0" Grid.Column="2" />
             </Grid>
+
         </Panel>
 
         <Panel IsVisible="{Binding ImageView}"

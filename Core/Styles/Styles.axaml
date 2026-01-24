@@ -55,23 +55,6 @@
         </Style>
     </Style>
 
-    <Style Selector="Button.SlideshowButton">
-        <Setter Property="CornerRadius" Value="0" />
-        <Setter Property="Background" Value="#25000000" />
-
-        <Style Selector="^:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#35000000" />
-        </Style>
-
-        <Style Selector="^:pointerpressed /template/ ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
-
-        <Style Selector="^:disabled /template/ ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
-    </Style>
-
     <Style Selector="TabControl.MainTabControl">
         <Setter Property="Background" Value="#14000000" />
     </Style>

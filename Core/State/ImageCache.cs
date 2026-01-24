@@ -10,7 +10,7 @@ using ImageViewer.Core.Utils;
 
 public sealed class ImageCache
 {
-    private static readonly object SyncLock = new();
+    private static readonly System.Threading.Lock SyncLock = new();
     private static readonly string ImageKeyPrefix = "image-";
     private static readonly string ThumbnailKeyPrefix = "thumnail-";
     private static readonly int ThumbnailHeight = 300;

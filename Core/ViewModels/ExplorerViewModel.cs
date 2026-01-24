@@ -16,7 +16,7 @@ public partial class ExplorerViewModel : ViewModelBase
     private readonly ConsoleLogger<ExplorerViewModel> logger = new();
     private readonly TreeView treeView;
     private FileNode? lastSelectedNode;
-    private FileNode? lastExpandedOrCollapsedNode;
+    private FileNode? previouslyExpandedOrCollapsedNode;
 
     public ExplorerViewModel(ExplorerView parentView)
     {
@@ -64,7 +64,7 @@ public partial class ExplorerViewModel : ViewModelBase
         {
             logger.Log($"User selected folder: [{node.Resource.Path.PathString}]");
 
-            lastExpandedOrCollapsedNode = null;
+            previouslyExpandedOrCollapsedNode = null;
             lastSelectedNode = node;
             AppState.Instance.SelectedFolder = node.Resource;
             e.Handled = true;
@@ -87,7 +87,7 @@ public partial class ExplorerViewModel : ViewModelBase
             treeViewItem.ContainerPrepared += OnTreeViewContainerPrepared;
 
             if (IsLastSelectedNode(treeViewModel)
-                || IsLastExpandedOrCollapsedNode(treeViewModel)
+                || IsPreviouslyExpandedOrCollapsedNode(treeViewModel)
                 || IsNodeMatchingCurrentPath(treeViewModel))
             {
                 treeView.SelectedItem = treeViewModel;
@@ -99,8 +99,9 @@ public partial class ExplorerViewModel : ViewModelBase
     private bool IsLastSelectedNode(FileNode treeViewModel)
         => lastSelectedNode != null && treeViewModel.Resource.Path.Equals(lastSelectedNode.Resource.Path);
 
-    private bool IsLastExpandedOrCollapsedNode(FileNode treeViewModel)
-        => lastExpandedOrCollapsedNode != null && treeViewModel.Resource.Path.Equals(lastExpandedOrCollapsedNode.Resource.Path);
+    private bool IsPreviouslyExpandedOrCollapsedNode(FileNode treeViewModel)
+        => previouslyExpandedOrCollapsedNode != null
+            && treeViewModel.Resource.Path.Equals(previouslyExpandedOrCollapsedNode.Resource.Path);
 
     private bool IsNodeMatchingCurrentPath(FileNode treeViewModel)
         => CurrentPath != string.Empty && treeViewModel.Resource.Path.PathString == currentPath;
@@ -120,7 +121,7 @@ public partial class ExplorerViewModel : ViewModelBase
 
         FileNode node = (item.DataContext as FileNode)!;
         lastSelectedNode = null;
-        lastExpandedOrCollapsedNode = null;
+        previouslyExpandedOrCollapsedNode = null;
         if (node.IsExpanded)
         {
             logger.Log($"User expanded node: [{node.Resource.Path.PathString}]");

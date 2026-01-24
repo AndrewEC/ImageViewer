@@ -17,6 +17,15 @@ public static class Sorting
     public static IComparer<PathLike> GetComparer(SortMethod sortMethod)
         => Comparers[sortMethod];
 
+    /// <summary>
+    /// "Windows Like" sorting attempts to parse the file names to a number
+    /// then compare the resulting numbers to determine the order. If either file
+    /// name cannot be parsed to an integer this will fallback to comparing the
+    /// string values for order.
+    /// <para>
+    /// This is to match the default Windows behaviour.
+    /// </para>
+    /// </summary>
     public class WindowsLikeComparer : IComparer<PathLike>
     {
         private static readonly int RangeMin = 48;
