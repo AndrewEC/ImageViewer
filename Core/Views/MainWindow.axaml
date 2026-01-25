@@ -43,7 +43,7 @@
 
             <Grid ColumnDefinitions="25*,0.05*,74.95*">
                 <view:ExplorerView Grid.Row="0" Grid.Column="0" />
-                <GridSplitter Grid.Row="0" Grid.Column="1" Background="#eee" ResizeDirection="Columns"/>
+                <GridSplitter Grid.Row="0" Grid.Column="1" Background="#DDD" ResizeDirection="Columns"/>
                 <view:FolderPreview Grid.Row="0" Grid.Column="2" />
             </Grid>
 

@@ -6,6 +6,8 @@ using System.Reactive;
 using ImageViewer.Core.Config;
 using ImageViewer.Core.Models;
 using ImageViewer.Core.Utils;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 using ReactiveUI;
 
 public partial class SettingsViewModel : ViewModelBase
@@ -101,9 +103,20 @@ public partial class SettingsViewModel : ViewModelBase
         HasUnsavedChanges = false;
     }
 
-    private void OpenSettingsFolder()
+    private async void OpenSettingsFolder()
     {
-        PathLike path = ConfigState.Instance.CreateAndGetConfigFilePath();
+        PathLike? path = ConfigState.Instance.CreateAndGetConfigFilePath();
+        if (path == null)
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Config Not Found",
+                "The configuration folder could not be found.",
+                ButtonEnum.Ok)
+                .ShowAsync();
+            
+            return;
+        }
+
         Process.Start("explorer.exe", "/select," + path.PathString);
     }
 }
