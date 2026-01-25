@@ -11,6 +11,7 @@
 
     <ScrollViewer>
         <StackPanel Classes="SettingsColumn">
+
             <StackPanel Classes="SettingsRow">
                 <StackPanel Classes="RowPadding" Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
@@ -18,6 +19,7 @@
                         <Slider Minimum="1" Maximum="60" MinWidth="200" Value="{Binding SlideshowIntervalSeconds}"/>
                         <TextBlock Margin="10,15,10,0" Text="{Binding SlideshowIntervalSeconds}" />
                     </StackPanel>
+                    <Panel Classes="SettingsRowDivider"></Panel>
                     <TextBlock Classes="SettingHelpText">
                         The number of seconds to wait before moving to the next image in the slideshow.
                     </TextBlock>
@@ -34,6 +36,7 @@
                             <ComboBoxItem>3</ComboBoxItem>
                         </ComboBox>
                     </StackPanel>
+                    <Panel Classes="SettingsRowDivider"></Panel>
                     <TextBlock Classes="SettingHelpText">
                         The number of nested folders to scan for images whenever a
                         folder is selected in the explorer tab. Larger numbers may reduce performance
@@ -51,6 +54,7 @@
                             <ComboBoxItem>Windows Like</ComboBoxItem>
                         </ComboBox>
                     </StackPanel>
+                    <Panel Classes="SettingsRowDivider"></Panel>
                     <TextBlock Classes="SettingHelpText">
                         "Windows Like" sorting will attempt to sort files numerically
                         if the file name appears to be a number otherwise it is the same
@@ -62,16 +66,20 @@
 
             <StackPanel Classes="SettingsRow">
                 <StackPanel Classes="RowPadding">
-                    <Button Command="{Binding SaveConfigCommand}"
-                        IsEnabled="{Binding HasUnsavedChanges}">Save</Button>
+                    <Button Command="{Binding SaveConfigCommand}" IsEnabled="{Binding HasUnsavedChanges}">
+                        Save
+                    </Button>
                     
-                    <Button Command="{Binding ResetConfigCommand}"
-                        IsEnabled="{Binding HasUnsavedChanges}">Reset</Button>
+                    <Button Command="{Binding ResetConfigCommand}" IsEnabled="{Binding HasUnsavedChanges}">
+                        Reset
+                    </Button>
                     
                     <Button Command="{Binding OpenSettingsFolderCommand}">
-                        Open Settings Folder</Button>
+                        Open Settings Folder
+                    </Button>
                 </StackPanel>
             </StackPanel>
+
         </StackPanel>
     </ScrollViewer>
 

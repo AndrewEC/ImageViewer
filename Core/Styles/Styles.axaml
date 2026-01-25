@@ -1,6 +1,12 @@
 <Styles xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:models="using:ImageViewer.Core.Models">
+
+    <Style Selector="TextBox.ExplorerPath">
+        <Setter Property="Margin" Value="5" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
     
     <Style Selector="TreeView TreeViewItem" x:DataType="models:FileNode">
         <Setter Property="IsExpanded" Value="{Binding IsExpanded}" />
@@ -73,7 +79,7 @@
     <Style Selector="StackPanel.SettingsRow">
         <Setter Property="Orientation" Value="Horizontal" />
         <Setter Property="Margin" Value="0,10,0,10" />
-        <Setter Property="Background" Value="#FFFFFFFF" />
+        <Setter Property="Background" Value="#FFF" />
 
         <Style Selector="^ StackPanel.RowPadding">
             <Setter Property="Margin" Value="10" />
@@ -81,9 +87,19 @@
         </Style>
     </Style>
 
+    <Style Selector="Panel.SettingsRowDivider">
+        <Setter Property="Margin" Value="0,5,0,5" />
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Background" Value="#EEE" />
+    </Style>
+
     <Style Selector="StackPanel.SettingsColumn">
         <Setter Property="Orientation" Value="Vertical" />
         <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="Grid.MainGrid">
+        <Setter Property="Background" Value="#EEE" />
     </Style>
 
 </Styles>

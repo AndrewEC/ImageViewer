@@ -12,7 +12,7 @@
     <Grid RowDefinitions="8*,92*">
         <TextBox Grid.Row="0" Grid.Column="0"
             Text="{Binding CurrentPath}"
-            TextWrapping="Wrap">
+            Classes="ExplorerPath">
 
             <TextBox.KeyBindings>
                 <KeyBinding  Command="{Binding UpdatePathCommand}" Gesture="Enter" />

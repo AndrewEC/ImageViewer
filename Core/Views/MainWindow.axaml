@@ -20,7 +20,7 @@
         <StyleInclude Source="/Core/Styles/Styles.axaml" />
     </Window.Styles>
     
-    <Grid x:Name="MainGrid">
+    <Grid x:Name="MainGrid" Classes="MainGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="10*"></RowDefinition>
             <RowDefinition Height="90*"></RowDefinition>
@@ -41,9 +41,9 @@
             Grid.Row="1"
             Grid.Column="0">
 
-            <Grid ColumnDefinitions="25*,1*,74*">
+            <Grid ColumnDefinitions="25*,0.05*,74.95*">
                 <view:ExplorerView Grid.Row="0" Grid.Column="0" />
-                <GridSplitter Grid.Row="0" Grid.Column="1" Background="Gray" ResizeDirection="Columns"/>
+                <GridSplitter Grid.Row="0" Grid.Column="1" Background="#eee" ResizeDirection="Columns"/>
                 <view:FolderPreview Grid.Row="0" Grid.Column="2" />
             </Grid>
 
