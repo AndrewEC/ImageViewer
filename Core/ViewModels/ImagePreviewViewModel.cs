@@ -14,13 +14,14 @@ using ImageViewer.Core.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
+using System.Collections.Immutable;
 
 #pragma warning disable CA1001
 public partial class ImagePreviewViewModel : ViewModelBase
 #pragma warning restore CA1001
 {
-    private static readonly int[] NormalColumnSizes = [10, 80, 10];
-    private static readonly int[] SlideshowColumnSizes = [0, 100, 0];
+    private static readonly ImmutableArray<int> NormalColumnSizes = [10, 80, 10];
+    private static readonly ImmutableArray<int> SlideshowColumnSizes = [0, 100, 0];
 
     private readonly ConsoleLogger<ImagePreviewViewModel> logger = new();
 

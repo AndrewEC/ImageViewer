@@ -1,8 +1,10 @@
 ﻿namespace ImageViewer.Core.ViewModels;
 
 using System;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using ImageViewer.Core.Models;
 using ImageViewer.Core.Utils;
@@ -11,15 +13,15 @@ using ReactiveUI;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private static readonly int[] NormalRowHeights = [10, 90];
-    private static readonly int[] SlideshowRowHeights = [0, 100];
+    private static readonly ImmutableArray<int> SlideshowRowHeights = [0, 100];
 
     private readonly ConsoleLogger<MainWindowViewModel> logger = new();
 
     private readonly MainWindow mainWindow;
     private readonly string[] launchArguments;
+    private readonly Grid mainGrid;
+    private readonly TabStripItem firstItem;
     private WindowState? previousWindowState;
-    private Grid mainGrid;
 
     public MainWindowViewModel(MainWindow mainWindow, string[] launchArguments)
     {
@@ -30,6 +32,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         this.mainWindow = mainWindow;
         mainWindow.KeyUp += OnKeyUp;
+        mainWindow.Resized += OnMainWindowResized;
 
         Handlers.RegisterPropertyChangeHandler(AppState.Instance, new()
         {
@@ -44,6 +47,19 @@ public partial class MainWindowViewModel : ViewModelBase
         });
 
         mainGrid = mainWindow.FindControl<Grid>("MainGrid")!;
+
+        firstItem = mainWindow.FindControl<TabStripItem>("FirstTabStripItem")!;
+    }
+
+    private ImmutableArray<int> normalRowHeights = [0, 0];
+    public ImmutableArray<int> NormalRowHeights
+    {
+        get => normalRowHeights;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref normalRowHeights, value);
+            GridUtil.ResizeRows(mainGrid, value, GridUnitType.Pixel);
+        }
     }
 
     private bool explorerView = true;
@@ -129,6 +145,15 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    private void OnMainWindowResized(object? sender, WindowResizedEventArgs e)
+    {
+        if (sender == mainWindow && !AppState.Instance.IsSlideshowRunning)
+        {
+            NormalRowHeights = [(int)firstItem.DesiredSize.Height,
+                (int)(e.ClientSize.Height - firstItem.DesiredSize.Height)];
+        }
+    }
+
     private void Refresh()
     {
         logger.Log("Refreshing app...");
@@ -210,7 +235,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (!downloadFolder.IsDirectory())
         {
-            PathLike initialPath = new(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            PathLike initialPath = new(AppContext.BaseDirectory);
             logger.Log($"Could not find user downloads folder. Setting initial path to: [{initialPath.PathString}]");
             AppState.Instance.LoadStartingPath(initialPath);
         }

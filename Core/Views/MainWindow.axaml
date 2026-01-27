@@ -32,7 +32,7 @@
             Grid.Row="0"
             Grid.Column="0">
 
-            <TabStripItem>Explorer</TabStripItem>
+            <TabStripItem x:Name="FirstTabStripItem">Explorer</TabStripItem>
             <TabStripItem>Preview</TabStripItem>
             <TabStripItem>Settings</TabStripItem>
         </TabStrip>
