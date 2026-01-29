@@ -51,23 +51,21 @@ public partial class MainWindowViewModel : ViewModelBase
         firstItem = mainWindow.FindControl<TabStripItem>("FirstTabStripItem")!;
     }
 
-    private ImmutableArray<int> normalRowHeights = [0, 0];
     public ImmutableArray<int> NormalRowHeights
     {
-        get => normalRowHeights;
+        get;
         set
         {
-            this.RaiseAndSetIfChanged(ref normalRowHeights, value);
+            this.RaiseAndSetIfChanged(ref field, value);
             GridUtil.ResizeRows(mainGrid, value, GridUnitType.Pixel);
         }
-    }
+    } = [0, 0];
 
-    private bool explorerView = true;
     public bool ExplorerView
     {
-        get => explorerView;
-        set => this.RaiseAndSetIfChanged(ref explorerView, value);
-    }
+        get;
+        set => this.RaiseAndSetIfChanged(ref field, value);
+    } = true;
 
     private bool imageView;
     public bool ImageView

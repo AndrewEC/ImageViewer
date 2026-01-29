@@ -37,13 +37,11 @@ public partial class FolderPreviewViewModel : ViewModelBase
 
     public ReactiveCommand<PathLike, Unit> StartSlideshowCommand { get; }
 
-    private List<ImageResource> imageResources = [];
-
     public List<ImageResource> ImageResources
     {
-        get => imageResources;
-        set => this.RaiseAndSetIfChanged(ref imageResources, value);
-    }
+        get;
+        set => this.RaiseAndSetIfChanged(ref field, value);
+    } = [];
 
     private void StartSlideshow(PathLike imagePath)
     {
@@ -54,7 +52,7 @@ public partial class FolderPreviewViewModel : ViewModelBase
     private void ImageClicked(PathLike imagePath)
     {
         logger.Log($"User selected image: [{imagePath.PathString}]");
-        ImageResource? resource = imageResources.Find(resource => resource.Path.Equals(imagePath));
+        ImageResource? resource = ImageResources.Find(resource => resource.Path.Equals(imagePath));
         if (resource == null)
         {
             logger.Log("The image the user selected could not be found.");

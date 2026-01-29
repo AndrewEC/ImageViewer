@@ -9,7 +9,7 @@
     </Style>
     
     <Style Selector="TreeView TreeViewItem" x:DataType="models:FileNode">
-        <Setter Property="IsExpanded" Value="{Binding IsExpanded}" />
+        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=OneWay}" />
     </Style>
 
     <Style Selector="Image.PreviewImage">

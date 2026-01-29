@@ -23,9 +23,9 @@ public partial class SettingsViewModel : ViewModelBase
         OpenSettingsFolderCommand = ReactiveCommand.Create(OpenSettingsFolder);
 
         initialConfig = ConfigState.Instance.LoadConfig();
-        slideshowIntervalSeconds = initialConfig.SlideshowIntervalMillis / 1000.0;
-        scanDepthSelectedIndex = initialConfig.ScanDepth - 1;
-        sortMethodIndex = (int)initialConfig.SortMethod;
+        SlideshowIntervalSeconds = initialConfig.SlideshowIntervalMillis / 1000.0;
+        ScanDepthSelectedIndex = initialConfig.ScanDepth - 1;
+        SortMethodIndex = (int)initialConfig.SortMethod;
     }
 
     public ReactiveCommand<Unit, Unit> SaveConfigCommand { get; }
@@ -34,46 +34,38 @@ public partial class SettingsViewModel : ViewModelBase
 
     public ReactiveCommand<Unit, Unit> OpenSettingsFolderCommand { get; }
 
-    private bool hasUnsavedChanges;
-
     public bool HasUnsavedChanges
     {
-        get => hasUnsavedChanges;
-        set => this.RaiseAndSetIfChanged(ref hasUnsavedChanges, value);
+        get;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
-
-    private double slideshowIntervalSeconds;
 
     public double SlideshowIntervalSeconds
     {
-        get => slideshowIntervalSeconds;
+        get;
         set
         {
-            this.RaiseAndSetIfChanged(ref slideshowIntervalSeconds, Math.Round(value));
+            this.RaiseAndSetIfChanged(ref field, Math.Round(value));
             HasUnsavedChanges = true;
         }
     }
-
-    private int scanDepthSelectedIndex;
 
     public int ScanDepthSelectedIndex
     {
-        get => scanDepthSelectedIndex;
+        get;
         set
         {
-            this.RaiseAndSetIfChanged(ref scanDepthSelectedIndex, value);
+            this.RaiseAndSetIfChanged(ref field, value);
             HasUnsavedChanges = true;
         }
     }
 
-    private int sortMethodIndex;
-
     public int SortMethodIndex
     {
-        get => sortMethodIndex;
+        get;
         set
         {
-            this.RaiseAndSetIfChanged(ref sortMethodIndex, value);
+            this.RaiseAndSetIfChanged(ref field, value);
             HasUnsavedChanges = true;
         }
     }
@@ -89,6 +81,7 @@ public partial class SettingsViewModel : ViewModelBase
             ScanDepth = ScanDepthSelectedIndex + 1,
             SortMethod = (SortMethod)SortMethodIndex,
         };
+
         ConfigState.Instance.SaveConfig(updatedConfig);
         initialConfig = updatedConfig;
     }

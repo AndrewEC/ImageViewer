@@ -110,43 +110,67 @@ public class ConfigState
                 return configFilePath;
             }
 
-            string appDataRoamingPath = Environment
-                .GetFolderPath(Environment.SpecialFolder.ApplicationData);
-
-            PathLike configDataFolder = new PathLike(appDataRoamingPath).Join(AppName);
-            if (!configDataFolder.IsDirectory())
+            PathLike? configDataFolder = CreateAndGetConfigDirectory();
+            if (configDataFolder == null)
             {
-                try
-                {
-                    logger.Log($"Config data folder not found. Creating folder at: [{configDataFolder}]");
-                    Directory.CreateDirectory(configDataFolder.PathString);
-                }
-                catch (Exception e)
-                {
-                    logger.Log($"Failed to create data directory. Cause: [{e.Message}].");
-                    return null;
-                }
+                return null;
             }
 
-            PathLike configFile = configDataFolder.Join(ConfigFileName);
-            if (!configFile.IsFile())
+            PathLike? configFile = CreateAndGetConfigFile(configDataFolder);
+            if (configFile == null)
             {
-                try
-                {
-                    logger.Log($"Config file not found. Creating default config at: [{configFile}]");
-                    string defaultConfigJson = JsonSerializer.Serialize(new Config(), ConfigSerializerOptions);
-                    logger.Log($"Writing default config: [{defaultConfigJson}]");
-                    File.WriteAllText(configFile.PathString, defaultConfigJson);
-                }
-                catch (Exception e)
-                {
-                    logger.Log($"Failed to create default config file. Cause: [{e.Message}].");
-                    return null;
-                }
+                return null;
             }
 
             configFilePath = configFile;
             return configFile;
+        }
+    }
+
+    private PathLike? CreateAndGetConfigFile(PathLike configDataFolder)
+    {
+        PathLike configFile = configDataFolder.Join(ConfigFileName);
+        if (configFile.IsFile())
+        {
+            return configFile;
+        }
+
+        try
+        {
+            logger.Log($"Config file not found. Creating default config at: [{configFile}]");
+            string defaultConfigJson = JsonSerializer.Serialize(new Config(), ConfigSerializerOptions);
+            logger.Log($"Writing default config: [{defaultConfigJson}]");
+            File.WriteAllText(configFile.PathString, defaultConfigJson);
+            return configFile;
+        }
+        catch (Exception e)
+        {
+            logger.Log($"Failed to create default config file. Cause: [{e.Message}].");
+            return null;
+        }
+    }
+
+    private PathLike? CreateAndGetConfigDirectory()
+    {
+        string appDataRoamingPath = Environment
+            .GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+        PathLike configDataFolder = new PathLike(appDataRoamingPath).Join(AppName);
+        if (configDataFolder.IsDirectory())
+        {
+            return configDataFolder;
+        }
+
+        try
+        {
+            logger.Log($"Config data folder not found. Creating folder at: [{configDataFolder}]");
+            Directory.CreateDirectory(configDataFolder.PathString);
+            return configDataFolder;
+        }
+        catch (Exception e)
+        {
+            logger.Log($"Failed to create data directory. Cause: [{e.Message}].");
+            return null;
         }
     }
 }

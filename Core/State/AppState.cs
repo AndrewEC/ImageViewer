@@ -11,67 +11,59 @@ public sealed class AppState : INotifyPropertyChanged
     public static readonly AppState Instance = new();
 
     private List<FileResource> rootResources = [];
-    private ObservableCollection<FileNode> fileNodeTree = [];
 
     private AppState() { }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private bool isSlideshowRunning;
     public bool IsSlideshowRunning
     {
-        get => isSlideshowRunning;
+        get;
         set
         {
-            isSlideshowRunning = value;
+            field = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSlideshowRunning)));
         }
     }
 
     public ObservableCollection<FileNode> FileNodeTree
     {
-        get => fileNodeTree;
+        get;
         private set
         {
-            fileNodeTree = value;
+            field = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FileNodeTree)));
         }
-    }
+    } = [];
 
-    private FileResource? selectedFolder;
     public FileResource? SelectedFolder
     {
-        get => selectedFolder;
-
+        get;
         set
         {
-            selectedFolder = value;
+            field = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedFolder)));
-            SelectedFolderResources = Scan.GetImageResourcesInFolder(selectedFolder);
+            SelectedFolderResources = Scan.GetImageResourcesInFolder(value);
         }
     }
 
-    private List<ImageResource> selectedFolderResources = [];
     public List<ImageResource> SelectedFolderResources
     {
-        get => selectedFolderResources;
-
-        set
+        get;
+        private set
         {
-            selectedFolderResources = value;
+            field = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedFolderResources)));
             SelectedImage = null;
         }
-    }
+    } = [];
 
-    private ImageResource? selectedImage;
     public ImageResource? SelectedImage
     {
-        get => selectedImage;
-
+        get;
         set
         {
-            selectedImage = value;
+            field = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedImage)));
             if (value != null)
             {
@@ -80,14 +72,12 @@ public sealed class AppState : INotifyPropertyChanged
         }
     }
 
-    private int selectedTabIndex;
     public int SelectedTabIndex
     {
-        get => selectedTabIndex;
-
+        get;
         set
         {
-            selectedTabIndex = value;
+            field = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedTabIndex)));
         }
     }

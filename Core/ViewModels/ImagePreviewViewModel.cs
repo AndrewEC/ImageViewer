@@ -94,34 +94,30 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
     public ReactiveCommand<Unit, Unit> ShowInExplorerCommand { get; }
 
-    private ImageRect imageRect = new(0, 0, 1, 1);
     public ImageRect ImageRect
     {
-        get => imageRect;
-        set => this.RaiseAndSetIfChanged(ref imageRect, value);
-    }
+        get;
+        set => this.RaiseAndSetIfChanged(ref field, value);
+    } = new(0, 0, 1, 1);
 
-    private bool isNavigationEnabled;
     public bool IsNavigationEnabled
     {
-        get => isNavigationEnabled;
-        set => this.RaiseAndSetIfChanged(ref isNavigationEnabled, value);
+        get;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
-    private bool isImageSelected;
     public bool IsImageSelected
     {
-        get => isImageSelected;
-        set => this.RaiseAndSetIfChanged(ref isImageSelected, value);
+        get;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
-    private bool isSlideshowRunning;
     public bool IsSlideshowRunning
     {
-        get => isSlideshowRunning;
+        get;
         set
         {
-            this.RaiseAndSetIfChanged(ref isSlideshowRunning, value);
+            this.RaiseAndSetIfChanged(ref field, value);
             canvasImageManager.Reset();
             canvasDragManager.Reset();
             if (value)
@@ -137,13 +133,12 @@ public partial class ImagePreviewViewModel : ViewModelBase
         }
     }
 
-    private ImageResource? selectedImage;
     public ImageResource? SelectedImage
     {
-        get => selectedImage;
+        get;
         set
         {
-            this.RaiseAndSetIfChanged(ref selectedImage, value);
+            this.RaiseAndSetIfChanged(ref field, value);
             IsImageSelected = value != null;
 
             canvasDragManager.Reset();
@@ -163,7 +158,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
     private void OnCanvasScroll(object? sender, PointerWheelEventArgs e)
     {
-        if (sender != canvas || isSlideshowRunning)
+        if (sender != canvas || IsSlideshowRunning)
         {
             return;
         }
@@ -173,7 +168,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
     private void OnCanvasDragged(object? sender, InputElementDraggedEventArgs e)
     {
-        if (sender != canvasDragManager || isSlideshowRunning)
+        if (sender != canvasDragManager || IsSlideshowRunning)
         {
             return;
         }
@@ -203,13 +198,13 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
     private void PreviousImage()
     {
-        if (selectedImage == null)
+        if (SelectedImage == null)
         {
             return;
         }
 
         List<ImageResource> resources = AppState.Instance.SelectedFolderResources;
-        int index = resources.FindIndex(resource => resource.Path.Equals(selectedImage.Path));
+        int index = resources.FindIndex(resource => resource.Path.Equals(SelectedImage.Path));
         if (index == -1)
         {
             logger.Log("Could not move to next image because the currently selected image could not be found.");
@@ -230,13 +225,13 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
     private void NextImage()
     {
-        if (selectedImage == null)
+        if (SelectedImage == null)
         {
             return;
         }
 
         List<ImageResource> resources = AppState.Instance.SelectedFolderResources;
-        int index = resources.FindIndex(resource => resource.Path.Equals(selectedImage.Path));
+        int index = resources.FindIndex(resource => resource.Path.Equals(SelectedImage.Path));
         if (index == -1)
         {
             logger.Log("Could not move to next image because the currently selected image could not be found.");

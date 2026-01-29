@@ -41,25 +41,21 @@ public partial class ExplorerViewModel : ViewModelBase
 
     public ReactiveCommand<Unit, Unit> UpdatePathCommand { get; }
 
-    private ObservableCollection<FileNode> treeNodes = AppState.Instance.FileNodeTree;
-
     public ObservableCollection<FileNode> TreeNodes
     {
-        get => treeNodes;
+        get;
         set
         {
-            this.RaiseAndSetIfChanged(ref treeNodes, value);
+            this.RaiseAndSetIfChanged(ref field, value);
             canExpandOrCollapse = true;
         }
-    }
-
-    private string currentPath = string.Empty;
+    } = AppState.Instance.FileNodeTree;
 
     public string CurrentPath
     {
-        get => currentPath;
-        set => this.RaiseAndSetIfChanged(ref currentPath, value);
-    }
+        get;
+        set => this.RaiseAndSetIfChanged(ref field, value);
+    } = string.Empty;
 
     private void OnTreeViewSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
@@ -83,9 +79,9 @@ public partial class ExplorerViewModel : ViewModelBase
     private void OnTreeViewContainerPrepared(object? sender, ContainerPreparedEventArgs e)
     {
         TreeViewItem treeViewItem = (TreeViewItem)e.Container;
-        treeViewItem.PropertyChanged += OnTreePropertyChanged;
         if (treeViewItem?.DataContext is FileNode treeViewModel)
         {
+            treeViewItem.PropertyChanged += OnTreePropertyChanged;
             treeViewItem.ContainerPrepared += OnTreeViewContainerPrepared;
 
             if (IsLastSelectedNode(treeViewModel)
@@ -101,7 +97,7 @@ public partial class ExplorerViewModel : ViewModelBase
         => lastSelectedNode != null && treeViewModel.Resource.Path.Equals(lastSelectedNode.Resource.Path);
 
     private bool IsNodeMatchingCurrentPath(FileNode treeViewModel)
-        => CurrentPath != string.Empty && treeViewModel.Resource.Path.PathString == currentPath;
+        => CurrentPath != string.Empty && treeViewModel.Resource.Path.PathString == CurrentPath;
 
     /// <summary>
     /// This method will be invoked whenever a property of a tree node is updated.
