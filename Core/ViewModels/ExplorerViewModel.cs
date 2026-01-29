@@ -16,12 +16,11 @@ public partial class ExplorerViewModel : ViewModelBase
     private readonly ConsoleLogger<ExplorerViewModel> logger = new();
     private readonly TreeView treeView;
     private FileNode? lastSelectedNode;
-    private FileNode? previouslyExpandedOrCollapsedNode;
+    private bool canExpandOrCollapse;
 
     public ExplorerViewModel(ExplorerView parentView)
     {
         UpdatePathCommand = ReactiveCommand.Create(UpdatePath);
-        TreeNodes = AppState.Instance.FileNodeTree;
 
         treeView = parentView.FindControl<TreeView>("FolderTree")!;
         treeView.ContainerPrepared += OnTreeViewContainerPrepared;
@@ -47,7 +46,11 @@ public partial class ExplorerViewModel : ViewModelBase
     public ObservableCollection<FileNode> TreeNodes
     {
         get => treeNodes;
-        set => this.RaiseAndSetIfChanged(ref treeNodes, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref treeNodes, value);
+            canExpandOrCollapse = true;
+        }
     }
 
     private string currentPath = string.Empty;
@@ -64,7 +67,6 @@ public partial class ExplorerViewModel : ViewModelBase
         {
             logger.Log($"User selected folder: [{node.Resource.Path.PathString}]");
 
-            previouslyExpandedOrCollapsedNode = null;
             lastSelectedNode = node;
             AppState.Instance.SelectedFolder = node.Resource;
             e.Handled = true;
@@ -74,7 +76,7 @@ public partial class ExplorerViewModel : ViewModelBase
     /// <summary>
     /// Every time the node collection of the tree view is updated (this occurrs whenever the
     /// user expands or collapses a node), this method will be invoked.
-    /// This method will handle keeping the last node the user selected or expanded in view
+    /// This method will handle keeping the last node the user selected in view
     /// so the user does not have to manually scroll back to the node every time
     /// any change occurs to the tree view.
     /// </summary>
@@ -87,7 +89,6 @@ public partial class ExplorerViewModel : ViewModelBase
             treeViewItem.ContainerPrepared += OnTreeViewContainerPrepared;
 
             if (IsLastSelectedNode(treeViewModel)
-                || IsPreviouslyExpandedOrCollapsedNode(treeViewModel)
                 || IsNodeMatchingCurrentPath(treeViewModel))
             {
                 treeView.SelectedItem = treeViewModel;
@@ -98,10 +99,6 @@ public partial class ExplorerViewModel : ViewModelBase
 
     private bool IsLastSelectedNode(FileNode treeViewModel)
         => lastSelectedNode != null && treeViewModel.Resource.Path.Equals(lastSelectedNode.Resource.Path);
-
-    private bool IsPreviouslyExpandedOrCollapsedNode(FileNode treeViewModel)
-        => previouslyExpandedOrCollapsedNode != null
-            && treeViewModel.Resource.Path.Equals(previouslyExpandedOrCollapsedNode.Resource.Path);
 
     private bool IsNodeMatchingCurrentPath(FileNode treeViewModel)
         => CurrentPath != string.Empty && treeViewModel.Resource.Path.PathString == currentPath;
@@ -119,17 +116,23 @@ public partial class ExplorerViewModel : ViewModelBase
             return;
         }
 
+        if (!canExpandOrCollapse)
+        {
+            return;
+        }
+
+        canExpandOrCollapse = false;
+
         FileNode node = (item.DataContext as FileNode)!;
         lastSelectedNode = null;
-        previouslyExpandedOrCollapsedNode = null;
         if (node.IsExpanded)
         {
-            logger.Log($"User expanded node: [{node.Resource.Path.PathString}]");
+            logger.Log($"User collapsed node: [{node.Resource.Path.PathString}]");
             AppState.Instance.CollapseNode(node);
         }
         else if (node.ContainsOnlyLoadMorePlaceholder())
         {
-            logger.Log($"User collapsed node: [{node.Resource.Path.PathString}]");
+            logger.Log($"User expanded node: [{node.Resource.Path.PathString}]");
             AppState.Instance.ExpandNode(node);
         }
     }

@@ -134,8 +134,7 @@ public class ConfigState
                 try
                 {
                     logger.Log($"Config file not found. Creating default config at: [{configFile}]");
-                    Config defaultConfig = new();
-                    string defaultConfigJson = JsonSerializer.Serialize(defaultConfig, ConfigSerializerOptions);
+                    string defaultConfigJson = JsonSerializer.Serialize(new Config(), ConfigSerializerOptions);
                     logger.Log($"Writing default config: [{defaultConfigJson}]");
                     File.WriteAllText(configFile.PathString, defaultConfigJson);
                 }
