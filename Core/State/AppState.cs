@@ -117,9 +117,9 @@ public sealed class AppState : INotifyPropertyChanged
 
         Scan.ExpandPath(startingPath, rootResources);
 
-        SelectedFolder = Scan.FindFileResourceMatchingPath(startingPath, rootResources);
-
         RebuildFileNodeTree();
+
+        SelectedFolder = Scan.FindFileResourceMatchingPath(startingPath, rootResources);
     }
 
     public void ExpandNode(FileNode node)

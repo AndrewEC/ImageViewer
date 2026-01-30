@@ -1,9 +1,11 @@
 namespace ImageViewer.Core.ViewModels;
 
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.VisualTree;
 using ImageViewer.Core.Models;
 using ImageViewer.Core.Utils;
 using ImageViewer.Core.Views;
@@ -17,6 +19,7 @@ public partial class ExplorerViewModel : ViewModelBase
     private readonly TreeView treeView;
     private FileNode? lastSelectedNode;
     private bool canExpandOrCollapse;
+    private Vector lastScrollOffset = Vector.Zero;
 
     public ExplorerViewModel(ExplorerView parentView)
     {
@@ -25,6 +28,7 @@ public partial class ExplorerViewModel : ViewModelBase
         treeView = parentView.FindControl<TreeView>("FolderTree")!;
         treeView.ContainerPrepared += OnTreeViewContainerPrepared;
         treeView.SelectionChanged += OnTreeViewSelectionChanged;
+        treeView.AutoScrollToSelectedItem = false;
 
         Handlers.RegisterPropertyChangeHandler(AppState.Instance, new()
         {
@@ -34,7 +38,11 @@ public partial class ExplorerViewModel : ViewModelBase
             },
             {
                 nameof(AppState.Instance.SelectedFolder),
-                () => CurrentPath = AppState.Instance.SelectedFolder?.Path.PathString ?? string.Empty
+                () =>
+                {
+                    lastSelectedNode = null;
+                    CurrentPath = AppState.Instance.SelectedFolder?.Path.PathString ?? string.Empty;
+                }
             },
         });
     }
@@ -48,6 +56,14 @@ public partial class ExplorerViewModel : ViewModelBase
         {
             this.RaiseAndSetIfChanged(ref field, value);
             canExpandOrCollapse = true;
+
+            if (lastScrollOffset != Vector.Zero)
+            {
+                treeView.GetVisualDescendants()
+                    .OfType<ScrollViewer>()
+                    .FirstOrDefault()
+                    ?.Offset = lastScrollOffset;
+            }
         }
     } = AppState.Instance.FileNodeTree;
 
@@ -87,8 +103,16 @@ public partial class ExplorerViewModel : ViewModelBase
             if (IsLastSelectedNode(treeViewModel)
                 || IsNodeMatchingCurrentPath(treeViewModel))
             {
-                treeView.SelectedItem = treeViewModel;
-                treeView.ScrollIntoView(treeViewModel);
+                if (lastScrollOffset == Vector.Zero)
+                {
+                    treeView.AutoScrollToSelectedItem = true;
+                    treeView.SelectedItem = treeViewModel;
+                    treeView.AutoScrollToSelectedItem = false;
+                }
+                else
+                {
+                    treeView.SelectedItem = treeViewModel;
+                }
             }
         }
     }
@@ -100,8 +124,8 @@ public partial class ExplorerViewModel : ViewModelBase
         => CurrentPath != string.Empty && treeViewModel.Resource.Path.PathString == CurrentPath;
 
     /// <summary>
-    /// This method will be invoked whenever a property of a tree node is updated.
-    /// This method will specifically handle what occurrs when the IsExpanded property
+    /// This method will be invoked whenever a property of a tree node is updated
+    /// and will specifically handle what occurrs when the IsExpanded property
     /// changes.
     /// </summary>
     private void OnTreePropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -118,6 +142,11 @@ public partial class ExplorerViewModel : ViewModelBase
         }
 
         canExpandOrCollapse = false;
+
+        lastScrollOffset = treeView.GetVisualDescendants()
+            .OfType<ScrollViewer>()
+            .FirstOrDefault()
+            ?.Offset ?? Vector.Zero;
 
         FileNode node = (item.DataContext as FileNode)!;
         lastSelectedNode = null;
@@ -149,6 +178,7 @@ public partial class ExplorerViewModel : ViewModelBase
             return;
         }
 
+        lastScrollOffset = Vector.Zero;
         AppState.Instance.LoadStartingPath(target);
     }
 }
