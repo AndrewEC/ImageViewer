@@ -33,13 +33,7 @@ public sealed class PathLike
             return fileName;
         }
 
-        int index = fileName.IndexOf('.');
-        if (index == -1)
-        {
-            return fileName;
-        }
-
-        return fileName[..index];
+        return Path.GetFileNameWithoutExtension(fileName);
     }
 
     public bool Delete()

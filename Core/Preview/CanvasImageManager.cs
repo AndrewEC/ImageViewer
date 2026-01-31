@@ -13,71 +13,66 @@ public sealed class CanvasImageManager
 
     public event EventHandler<ImageRectChangedEventArgs>? ImageRectChanged;
 
-    private Point offset;
     public Point Offset
     {
-        get => offset;
+        get;
 
         set
         {
-            offset = value;
+            field = value;
             ComputeImageRect();
         }
     }
 
-    private Size canvasSize;
     public Size CanvasSize
     {
-        get => canvasSize;
+        get;
 
         set
         {
-            canvasSize = value;
+            field = value;
             ComputeImageRect();
         }
     }
 
-    private Size imageSize;
     public Size ImageSize
     {
-        get => imageSize;
+        get;
 
         set
         {
-            imageSize = value;
+            field = value;
             ComputeImageRect();
         }
     }
 
-    private double imageScale = DefaultScale;
     public double ImageScale
     {
-        get => imageScale;
+        get;
 
         set
         {
-            imageScale = value;
+            field = value;
             OnScaleUpdated();
         }
 
-    }
+    } = DefaultScale;
 
-    private ImageRect imageRect;
     public ImageRect ImageRect
     {
-        get => imageRect;
+        get;
 
         private set
         {
-            imageRect = value;
-            ImageRectChanged?.Invoke(this, new ImageRectChangedEventArgs(imageRect));
+            field = value;
+            ImageRectChanged?.Invoke(this, new ImageRectChangedEventArgs(value));
         }
     }
 
     public void Reset()
     {
-        imageScale = DefaultScale;
-        offset = new Point();
+        ImageScale = DefaultScale;
+        Offset = new Point();
         ComputeImageRect();
     }
 
@@ -105,8 +100,8 @@ public sealed class CanvasImageManager
 
     private ImageRect WithNewPosition(ImageRect imageRect)
     {
-        int x = (int) (CanvasSize.Width / 2 - imageRect.Width / 2 + offset.X);
-        int y = (int) (CanvasSize.Height / 2 - imageRect.Height / 2 + offset.Y);
+        int x = (int) (CanvasSize.Width / 2 - imageRect.Width / 2 + Offset.X);
+        int y = (int) (CanvasSize.Height / 2 - imageRect.Height / 2 + Offset.Y);
         return imageRect.WithX(x).WithY(y);
     }
 

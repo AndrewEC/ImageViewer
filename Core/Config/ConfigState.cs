@@ -72,14 +72,14 @@ public class ConfigState
         }
     }
 
-    public void SaveConfig(Config nextConfig)
+    public bool SaveConfig(Config nextConfig)
     {
         lock (SyncLock)
         {
             PathLike? configPath = CreateAndGetConfigFilePath();
             if (configPath == null)
             {
-                return;
+                return false;
             }
 
             logger.Log($"Saving config to: [{configPath}]");
@@ -93,10 +93,11 @@ public class ConfigState
             catch (Exception e)
             {
                 logger.Log($"Failed to save configuration changes. Cause: [{e.Message}].");
-                return;
+                return false;
             }
 
             currentConfig = new Config(nextConfig);
+            return true;
         }
     }
 

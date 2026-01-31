@@ -9,19 +9,19 @@ public sealed class DragManager
 
     public event EventHandler<InputElementDraggedEventArgs>? ElementDragged;
     
-    private readonly InputElement parentCanvas;
+    private readonly InputElement targetElement;
 
     private bool dragging;
     private Point start;
     private Point lastDelta;
 
-    public DragManager(InputElement parent)
+    public DragManager(InputElement targetElement)
     {
-        parentCanvas = parent;
+        this.targetElement = targetElement;
 
-        parent.PointerPressed += OnCanvasPointerPressed;
-        parent.PointerReleased += OnCavasPointerReleased;
-        parent.PointerMoved += OnCanvasPointerMoved;
+        this.targetElement.PointerPressed += OnCanvasPointerPressed;
+        this.targetElement.PointerReleased += OnCavasPointerReleased;
+        this.targetElement.PointerMoved += OnCanvasPointerMoved;
     }
 
     public void Reset()
@@ -33,7 +33,7 @@ public sealed class DragManager
 
     private void OnCanvasPointerMoved(object? sender, PointerEventArgs e)
     {
-        if (sender != parentCanvas || !dragging)
+        if (sender != targetElement || !dragging)
         {
             return;
         }
@@ -47,7 +47,7 @@ public sealed class DragManager
 
     private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (sender != parentCanvas || !e.Properties.IsLeftButtonPressed)
+        if (sender != targetElement || !e.Properties.IsLeftButtonPressed)
         {
             return;
         }
@@ -59,7 +59,7 @@ public sealed class DragManager
 
     private void OnCavasPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
-        if (sender != parentCanvas)
+        if (sender != targetElement)
         {
             return;
         }

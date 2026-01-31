@@ -75,8 +75,9 @@ public sealed class ImageCache
         {
             if (cache.TryGetValue(cacheKey, out CacheEntry? entry))
             {
-                entry.Timestamp = CurrentTimestamp();
-                logger.Log($"Found cached value for key [{cacheKey}]. Updating timestamp to [{entry.Timestamp}]");
+                long currentTime = CurrentTimestamp();
+                logger.Log($"Found cached value for key [{cacheKey}]. Updating timestamp to [{currentTime}]");
+                cache[cacheKey] = entry.WithTimestamp(CurrentTimestamp());
                 return (Bitmap?)entry.Bitmap;
             }
         }
@@ -116,10 +117,8 @@ public sealed class ImageCache
         }
     }
 
-    private sealed class CacheEntry(Bitmap bitmap, long timestamp)
+    private sealed record class CacheEntry(Bitmap Bitmap, long Timestamp)
     {
-        public Bitmap Bitmap { get; } = bitmap;
-
-        public long Timestamp { get; set; } = timestamp;
+        public CacheEntry WithTimestamp(long timestamp) => new(Bitmap, timestamp);
     }
 }

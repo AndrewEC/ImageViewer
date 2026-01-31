@@ -70,7 +70,7 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    private void SaveConfig()
+    private async void SaveConfig()
     {
         logger.Log("Saving configuration changes...");
         HasUnsavedChanges = false;
@@ -82,7 +82,16 @@ public partial class SettingsViewModel : ViewModelBase
             SortMethod = (SortMethod)SortMethodIndex,
         };
 
-        ConfigState.Instance.SaveConfig(updatedConfig);
+        if (!ConfigState.Instance.SaveConfig(updatedConfig))
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                "Save Failed",
+                "Your settings could not be saved. The config file may be in use or this program may not have permission to write to it.",
+                ButtonEnum.Ok)
+                .ShowAsync();
+            return;
+        }
+
         initialConfig = updatedConfig;
     }
 
