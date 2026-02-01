@@ -3,6 +3,7 @@ namespace ImageViewer.Core.State;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 using Avalonia.Media.Imaging;
@@ -14,8 +15,9 @@ public sealed class ImageCache
     private static readonly string ImageKeyPrefix = "image-";
     private static readonly string ThumbnailKeyPrefix = "thumnail-";
     private static readonly int ThumbnailHeight = 300;
-    private static readonly int TimerTickInterval = 30_000;
-    private static readonly int CacheEntryTimeToLiveMillis = 1000 * 60 * 10;
+    private static readonly int TimerTickInterval = 1000 * 60; // 1 minute in milliseconds.
+    private static readonly int CacheEntryTimeToLiveMillis = 1000 * 60 * 10; // 10 minutes in milliseconds.
+    private static readonly int MaxCacheSize = 30;
 
     public static readonly ImageCache Instance = new();
 
@@ -112,8 +114,49 @@ public sealed class ImageCache
             else
             {
                 cache[cacheKey] = new CacheEntry(newImage, CurrentTimestamp());
+                TryPopOldestImageEntry();
                 return newImage;
             }
+        }
+    }
+
+    private void TryPopOldestImageEntry()
+    {
+        string[] imageKeys = [.. cache.Keys.Where(key => key.StartsWith(ImageKeyPrefix, StringComparison.InvariantCulture))];
+        if (imageKeys.Length < MaxCacheSize)
+        {
+            return;
+        }
+
+        logger.Log("Popping oldest item from cache.");
+
+        string oldestKey = imageKeys[0];
+        CacheEntry oldestEntry = cache[oldestKey];
+        foreach (string nextKey in imageKeys)
+        {
+            if (nextKey == oldestKey)
+            {
+                continue;
+            }
+
+            CacheEntry nextEntry = cache[nextKey];
+            if (nextEntry.Timestamp < oldestEntry.Timestamp)
+            {
+                oldestKey = nextKey;
+                oldestEntry = nextEntry;
+            }
+        }
+
+        logger.Log($"Found oldest image item with key: [{oldestKey}].");
+        cache.Remove(oldestKey);
+
+        try
+        {
+            oldestEntry.Bitmap.Dispose();
+        }
+        catch (Exception e)
+        {
+            logger.Error("Could not dispose of oldest cached image.", e);
         }
     }
 

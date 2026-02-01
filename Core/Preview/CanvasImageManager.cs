@@ -121,7 +121,7 @@ public sealed class CanvasImageManager
         }
 
         double ratio;
-        if (imageWidth > imageHeight)
+        if (imageWidth - maxWidth > imageHeight - maxHeight)
         {
             ratio = maxWidth / imageWidth;
         }
@@ -133,8 +133,7 @@ public sealed class CanvasImageManager
         int newWidth = (int) (imageWidth * ratio * (ImageScale / 100.0));
         int newHeight = (int) (imageHeight * ratio * (ImageScale / 100.0));
 
-        return current.WithWidth(newWidth)
-            .WithHeight(newHeight);
+        return current.WithWidth(newWidth).WithHeight(newHeight);
     }
     
 }

@@ -27,12 +27,13 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         logger.Log($"Application launched with [{launchArguments.Length}] arguments.");
         this.launchArguments = launchArguments;
-
-        Refresh();
-
         this.mainWindow = mainWindow;
+
         mainWindow.KeyUp += OnKeyUp;
         mainWindow.Resized += OnMainWindowResized;
+
+        mainGrid = mainWindow.FindControl<Grid>("MainGrid")!;
+        firstItem = mainWindow.FindControl<TabStripItem>("FirstTabStripItem")!;
 
         Handlers.RegisterPropertyChangeHandler(AppState.Instance, new()
         {
@@ -46,9 +47,7 @@ public partial class MainWindowViewModel : ViewModelBase
             },
         });
 
-        mainGrid = mainWindow.FindControl<Grid>("MainGrid")!;
-
-        firstItem = mainWindow.FindControl<TabStripItem>("FirstTabStripItem")!;
+        Refresh();
     }
 
     public ImmutableArray<int> NormalRowHeights
@@ -67,78 +66,66 @@ public partial class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref field, value);
     } = true;
 
-    private bool imageView;
     public bool ImageView
     {
-        get => imageView;
-        set => this.RaiseAndSetIfChanged(ref imageView, value);
+        get;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
-    private bool settingsView;
     public bool SettingsView
     {
-        get => settingsView;
-        set => this.RaiseAndSetIfChanged(ref settingsView, value);
+        get;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
-    private bool isSlideshowRunning;
     public bool IsSlideshowRunning
     {
-        get => isSlideshowRunning;
+        get;
         set
         {
-            this.RaiseAndSetIfChanged(ref isSlideshowRunning, value);
-            if (value)
-            {
-                logger.Log("Slideshow started. Making window full screen.");
-
-                GridUtil.ResizeRows(mainGrid, SlideshowRowHeights);
-
-                previousWindowState = mainWindow.WindowState;
-                mainWindow.WindowState = WindowState.FullScreen;
-            }
-            else
-            {
-                GridUtil.ResizeRows(mainGrid, NormalRowHeights);
-
-                if (previousWindowState != null)
-                {
-                    logger.Log($"Slideshow stopped. Restoring window state: [{previousWindowState}]");
-                    mainWindow.WindowState = (WindowState)previousWindowState;
-                    previousWindowState = null;
-                }
-                else
-                {
-                    logger.Log("Slideshow stopped. No previous window state was recorded. Resetting to Normal.");
-                    mainWindow.WindowState = WindowState.Normal;
-                }
-            }
+            this.RaiseAndSetIfChanged(ref field, value);
+            OnSlideshowStateChanged(value);
         }
     }
 
-    private int selectedTabIndex = AppState.Instance.SelectedTabIndex;
     public int SelectedTabIndex
     {
-        get => selectedTabIndex;
+        get;
         set
         {
-            this.RaiseAndSetIfChanged(ref selectedTabIndex, value);
+            this.RaiseAndSetIfChanged(ref field, value);
 
-            ExplorerView = false;
-            ImageView = false;
-            SettingsView = false;
+            ExplorerView = value == 0;
+            ImageView = value == 1;
+            SettingsView = value == 2;
+        }
+    } = AppState.Instance.SelectedTabIndex;
 
-            if (value == 0)
+    private void OnSlideshowStateChanged(bool value)
+    {
+        if (value)
+        {
+            logger.Log("Slideshow started. Making window full screen.");
+
+            GridUtil.ResizeRows(mainGrid, SlideshowRowHeights);
+
+            previousWindowState = mainWindow.WindowState;
+            mainWindow.WindowState = WindowState.FullScreen;
+        }
+        else
+        {
+            GridUtil.ResizeRows(mainGrid, NormalRowHeights);
+
+            if (previousWindowState != null)
             {
-                ExplorerView = true;
+                logger.Log($"Slideshow stopped. Restoring window state: [{previousWindowState}]");
+                mainWindow.WindowState = (WindowState)previousWindowState;
+                previousWindowState = null;
             }
-            else if (value == 1)
+            else
             {
-                ImageView = true;
-            }
-            else if (value == 2)
-            {
-                SettingsView = true;
+                logger.Log("Slideshow stopped. No previous window state was recorded. Resetting to Normal.");
+                mainWindow.WindowState = WindowState.Normal;
             }
         }
     }

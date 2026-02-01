@@ -1,24 +1,8 @@
 namespace ImageViewer.Core.ViewModels;
 
-public readonly record struct ImageRect
+public readonly record struct ImageRect(int Width, int Height, int X, int Y)
 {
-    public ImageRect() { }
-
-    public ImageRect(int width, int height, int x, int y)
-    {
-        Width = width;
-        Height = height;
-        X = x;
-        Y = y;
-    }
-    
-    public int Width { get; }
-
-    public int Height { get; }
-
-    public int X { get; }
-
-    public int Y { get; }
+    public ImageRect() : this(0, 0, 0, 0) { }
 
     public ImageRect WithWidth(int width) => new(width, Height, X, Y);
 
