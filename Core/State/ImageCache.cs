@@ -50,7 +50,7 @@ public sealed class ImageCache
                     }
                     catch (Exception ex)
                     {
-                        logger.Log($"Failed to dispose bitmap [{entry.Key}]. Cause: [{ex.Message}]");
+                        logger.Error($"Failed to dispose bitmap [{entry.Key}].", ex);
                     }
                 }
             }
@@ -99,7 +99,7 @@ public sealed class ImageCache
         }
         catch (Exception e)
         {
-            logger.Log($"Failed to load image [{path}]. Cause: [{e.Message}]");
+            logger.Error($"Failed to load image [{path}].", e);
             return null;
         }
 

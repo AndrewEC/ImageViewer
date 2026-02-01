@@ -96,7 +96,9 @@ public sealed class AppState : INotifyPropertyChanged
 
         if (SelectedFolderResources.Count > 0)
         {
-            if (SelectedImage != null && SelectedImage.Path.Equals(resourceToRemove.Path))
+            if (SelectedTabIndex == (int)Tabs.ImagePreview
+                && SelectedImage != null
+                && SelectedImage.Path.Equals(resourceToRemove.Path))
             {
                 SelectedImage = SelectedFolderResources[0];
             }

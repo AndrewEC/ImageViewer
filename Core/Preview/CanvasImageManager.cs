@@ -7,7 +7,7 @@ using ImageViewer.Core.ViewModels;
 public sealed class CanvasImageManager
 {
 
-    public const double DefaultScale = 100;
+    private const double DefaultScale = 100;
     private const double MaxScale = DefaultScale * 2;
     private const double MinScale = DefaultScale / 2;
 

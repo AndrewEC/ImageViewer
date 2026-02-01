@@ -6,7 +6,9 @@ using Avalonia.Controls;
 public static class GridUtil
 {
     
-    public static void ResizeColumns(Grid grid, ImmutableArray<int> columnWidths, GridUnitType gridUnitType=GridUnitType.Star)
+    public static void ResizeColumns(Grid grid,
+        ImmutableArray<int> columnWidths,
+        GridUnitType gridUnitType=GridUnitType.Star)
     {
         for (int i = 0; i < grid.ColumnDefinitions.Count; i++)
         {
@@ -14,7 +16,9 @@ public static class GridUtil
         }
     }
 
-    public static void ResizeRows(Grid grid, ImmutableArray<int> rowHeights, GridUnitType gridUnitType=GridUnitType.Star)
+    public static void ResizeRows(Grid grid,
+        ImmutableArray<int> rowHeights,
+        GridUnitType gridUnitType=GridUnitType.Star)
     {
         for (int i = 0; i < grid.RowDefinitions.Count; i++)
         {

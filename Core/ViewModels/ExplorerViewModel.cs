@@ -87,10 +87,9 @@ public partial class ExplorerViewModel : ViewModelBase
 
     /// <summary>
     /// Every time the node collection of the tree view is updated (this occurrs whenever the
-    /// user expands or collapses a node), this method will be invoked.
-    /// This method will handle keeping the last node the user selected in view
-    /// so the user does not have to manually scroll back to the node every time
-    /// any change occurs to the tree view.
+    /// user expands or collapses a node), this method will be invoked. This will
+    /// ensure that when the tree view is refreshed the node the user had previously selected
+    /// will be re-selected.
     /// </summary>
     private void OnTreeViewContainerPrepared(object? sender, ContainerPreparedEventArgs e)
     {
@@ -172,7 +171,7 @@ public partial class ExplorerViewModel : ViewModelBase
             logger.Log("Requested path could not be found.");
             await MessageBoxManager.GetMessageBoxStandard(
                 "Invalid Path",
-                "The specified path could not be found. Please check the path points to a directoy and try again.",
+                "The specified path could not be found. Please check that the path points to a directoy and try again.",
                 ButtonEnum.Ok)
                 .ShowAsync();
             return;

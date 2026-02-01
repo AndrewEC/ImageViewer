@@ -64,7 +64,7 @@ public class ConfigState
             }
             catch (Exception e)
             {
-                logger.Log($"Failed to load configuration from JSON file. Cause: [{e}].");
+                logger.Error("Failed to load configuration from JSON file.", e);
                 currentConfig = new Config();
             }
 
@@ -92,7 +92,7 @@ public class ConfigState
             }
             catch (Exception e)
             {
-                logger.Log($"Failed to save configuration changes. Cause: [{e.Message}].");
+                logger.Error($"Failed to save configuration changes.", e);
                 return false;
             }
 
@@ -146,7 +146,7 @@ public class ConfigState
         }
         catch (Exception e)
         {
-            logger.Log($"Failed to create default config file. Cause: [{e.Message}].");
+            logger.Error("Failed to create default config file.", e);
             return null;
         }
     }
@@ -170,7 +170,7 @@ public class ConfigState
         }
         catch (Exception e)
         {
-            logger.Log($"Failed to create data directory. Cause: [{e.Message}].");
+            logger.Error("Failed to create data directory.", e);
             return null;
         }
     }

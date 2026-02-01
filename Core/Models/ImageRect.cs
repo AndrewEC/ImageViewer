@@ -1,6 +1,6 @@
 namespace ImageViewer.Core.ViewModels;
 
-public readonly struct ImageRect
+public readonly record struct ImageRect
 {
     public ImageRect() { }
 

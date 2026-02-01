@@ -92,7 +92,7 @@ public sealed class PathLike
 
     public PathLike GetRoot() => new(GetPathSegments()[0]);
 
-    public PathLike Join(string segment) => new(PathString + Path.DirectorySeparatorChar + segment);
+    public PathLike Join(string segment) => new(Path.Join(PathString, segment));
 
     public List<PathLike> GetChildFiles()
     {
