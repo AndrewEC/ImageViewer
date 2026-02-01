@@ -184,7 +184,7 @@ public partial class MainWindowViewModel : ViewModelBase
                     return false;
                 }
 
-                PathLike parentDirectory = argumentPath.GetParentDirectory();
+                PathLike parentDirectory = argumentPath.Parent();
                 logger.Log($"Setting initial start path to: [{parentDirectory.PathString}].");
                 AppState.Instance.LoadStartingPath(parentDirectory);
 
@@ -216,7 +216,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void RefreshUsingDefaultLocation()
     {
         string desktopFolder = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        PathLike downloadFolder = new PathLike(desktopFolder).GetParentDirectory().Join("Downloads");
+        PathLike downloadFolder = new PathLike(desktopFolder).Parent().Join("Downloads");
 
         if (!downloadFolder.IsDirectory())
         {

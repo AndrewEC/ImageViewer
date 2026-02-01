@@ -23,17 +23,35 @@ public sealed class PathLike
 
     public bool Exists() => IsFile() || IsDirectory();
 
-    public string GetName() => GetPathSegments()[^1];
+    public string Name() => PathSegments()[^1];
 
-    public string GetStem()
+    public string Stem()
     {
-        string fileName = GetPathSegments()[^1];
+        string fileName = PathSegments()[^1];
         if (IsDirectory() || !Exists())
         {
             return fileName;
         }
 
         return Path.GetFileNameWithoutExtension(fileName);
+    }
+
+    public bool CreateDirectory()
+    {
+        if (IsDirectory())
+        {
+            return true;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(PathString);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public bool Delete()
@@ -62,7 +80,7 @@ public sealed class PathLike
         }
     }
 
-    public string GetExtension()
+    public string Extension()
     {
         if (IsDirectory())
         {
@@ -72,9 +90,9 @@ public sealed class PathLike
         return Path.GetExtension(PathString);
     }
 
-    public PathLike GetParentDirectory()
+    public PathLike Parent()
     {
-        string[] segments = GetPathSegments();
+        string[] segments = PathSegments();
         if (segments.Length == 0 || segments.Length == 1)
         {
             return this;
@@ -86,15 +104,15 @@ public sealed class PathLike
         return new(parentPath);
     }
 
-    public string[] GetPathSegments() => PathString.Split(Path.DirectorySeparatorChar)
+    public string[] PathSegments() => PathString.Split(Path.DirectorySeparatorChar)
         .Where(segment => segment != string.Empty)
         .ToArray();
 
-    public PathLike GetRoot() => new(GetPathSegments()[0]);
+    public PathLike Root() => new(PathSegments()[0]);
 
     public PathLike Join(string segment) => new(Path.Join(PathString, segment));
 
-    public List<PathLike> GetChildFiles()
+    public List<PathLike> ChildFiles()
     {
         if (!IsDirectory())
         {
@@ -113,7 +131,7 @@ public sealed class PathLike
         }
     }
 
-    public List<PathLike> GetChildDirectories()
+    public List<PathLike> ChildDirectories()
     {
         if (!IsDirectory())
         {

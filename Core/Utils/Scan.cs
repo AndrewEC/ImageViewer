@@ -29,14 +29,14 @@ public static class Scan
         IComparer<PathLike> comparer = Sorting.GetComparer(config.SortMethod);
 
         return GetFoldersToScan(resource.Path, scanDepth)
-            .SelectMany(folder => folder.GetChildFiles())
+            .SelectMany(folder => folder.ChildFiles())
             .Where(IsPotentiallyImageFile)
             .OrderBy(file => file, comparer)
             .Select(file => new ImageResource(file))
             .ToList();
     }
 
-    public static bool IsPotentiallyImageFile(PathLike path) => SupportedImageExtensions.Contains(path.GetExtension());
+    public static bool IsPotentiallyImageFile(PathLike path) => SupportedImageExtensions.Contains(path.Extension());
 
     private static List<PathLike> GetFoldersToScan(PathLike root, int scanDepth)
     {
@@ -49,7 +49,7 @@ public static class Scan
                 break;
             }
 
-            List<PathLike> foundFolders = [.. pathsToScan.SelectMany(folder => folder.GetChildDirectories())];
+            List<PathLike> foundFolders = [.. pathsToScan.SelectMany(folder => folder.ChildDirectories())];
 
             folders.Add(foundFolders);
         }
@@ -91,7 +91,7 @@ public static class Scan
         rootResource.Expand();
 
         FileResource next = rootResource;
-        string[] segments = startingPath.GetPathSegments();
+        string[] segments = startingPath.PathSegments();
         for (int i = 1; i < segments.Length; i++)
         {
             FileResource? child = next.GetChildWithName(segments[i]);
@@ -108,7 +108,7 @@ public static class Scan
 
     private static FileResource? FindMatchingRoot(PathLike startingPath, List<FileResource> rootResources)
     {
-        PathLike startingRoot = startingPath.GetRoot();
+        PathLike startingRoot = startingPath.Root();
         return rootResources.Find(resource => resource.Path.Equals(startingRoot));
     }
 
@@ -121,7 +121,7 @@ public static class Scan
         }
 
         FileResource next = rootResource;
-        string[] segments = desiredPath.GetPathSegments();
+        string[] segments = desiredPath.PathSegments();
         for (int i = 1; i < segments.Length; i++)
         {
             FileResource? child = next.GetChildWithName(segments[i]);

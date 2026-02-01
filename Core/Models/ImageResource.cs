@@ -8,7 +8,7 @@ public sealed class ImageResource(PathLike path)
 {
     public PathLike Path { get; } = path;
 
-    public string Name { get; } = path.GetName();
+    public string Name { get; } = path.Name();
 
     public Task<Bitmap?> Thumbnail
     {

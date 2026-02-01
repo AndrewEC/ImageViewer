@@ -36,13 +36,13 @@ public static class Sorting
 
         public int Compare(PathLike? x, PathLike? y)
         {
-            int? x1 = TryParseInt(x?.GetStem());
+            int? x1 = TryParseInt(x?.Stem());
             if (x1 == null)
             {
                 return naturalComparer.Compare(x, y);
             }
 
-            int? y1 = TryParseInt(y?.GetStem());
+            int? y1 = TryParseInt(y?.Stem());
             if (y1 == null)
             {
                 return naturalComparer.Compare(x, y);
@@ -82,6 +82,6 @@ public static class Sorting
     public class NaturalComparer : IComparer<PathLike>
     {
         public int Compare(PathLike? x, PathLike? y)
-            => string.CompareOrdinal(x?.GetStem(), y?.GetStem());
+            => string.CompareOrdinal(x?.Stem(), y?.Stem());
     }
 }

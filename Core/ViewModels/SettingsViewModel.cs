@@ -46,7 +46,7 @@ public partial class SettingsViewModel : ViewModelBase
         set
         {
             this.RaiseAndSetIfChanged(ref field, Math.Round(value));
-            HasUnsavedChanges = true;
+            HasUnsavedChanges = HasConfigChanged();
         }
     }
 
@@ -56,7 +56,7 @@ public partial class SettingsViewModel : ViewModelBase
         set
         {
             this.RaiseAndSetIfChanged(ref field, value);
-            HasUnsavedChanges = true;
+            HasUnsavedChanges = HasConfigChanged();
         }
     }
 
@@ -66,21 +66,25 @@ public partial class SettingsViewModel : ViewModelBase
         set
         {
             this.RaiseAndSetIfChanged(ref field, value);
-            HasUnsavedChanges = true;
+            HasUnsavedChanges = HasConfigChanged();
         }
     }
+
+    private bool HasConfigChanged() => !DeriveConfig().Equals(initialConfig);
+
+    private Config DeriveConfig() => new()
+    {
+        SlideshowIntervalMillis = (int)(SlideshowIntervalSeconds * 1000),
+        ScanDepth = ScanDepthSelectedIndex + 1,
+        SortMethod = (SortMethod)SortMethodIndex,
+    };
 
     private async void SaveConfig()
     {
         logger.Log("Saving configuration changes...");
         HasUnsavedChanges = false;
 
-        Config updatedConfig = new()
-        {
-            SlideshowIntervalMillis = (int)(SlideshowIntervalSeconds * 1000),
-            ScanDepth = ScanDepthSelectedIndex + 1,
-            SortMethod = (SortMethod)SortMethodIndex,
-        };
+        Config updatedConfig = DeriveConfig();
 
         if (!ConfigState.Instance.SaveConfig(updatedConfig))
         {
@@ -97,7 +101,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     private void ResetConfig()
     {
-        logger.Log("Resetings configuration UI...");
+        logger.Log("Resetting configuration UI...");
         SlideshowIntervalSeconds = initialConfig.SlideshowIntervalMillis / 1000.0;
         ScanDepthSelectedIndex = initialConfig.ScanDepth - 1;
         SortMethodIndex = (int)initialConfig.SortMethod;
@@ -107,12 +111,12 @@ public partial class SettingsViewModel : ViewModelBase
 
     private async void OpenSettingsFolder()
     {
-        PathLike? path = ConfigState.Instance.CreateAndGetConfigFilePath();
-        if (path == null)
+        PathLike path = ConfigState.GetConfigFilePath();
+        if (!path.IsFile())
         {
             await MessageBoxManager.GetMessageBoxStandard(
                 "Config Not Found",
-                "The configuration folder could not be found.",
+                "No configuration folder exists. One will be created when you update any settings.",
                 ButtonEnum.Ok)
                 .ShowAsync();
             

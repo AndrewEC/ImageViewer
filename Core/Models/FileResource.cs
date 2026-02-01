@@ -22,7 +22,7 @@ public sealed class FileResource
 
     public void Expand()
     {
-        Children = [.. Path.GetChildDirectories().Select(child => new FileResource(child, true))];
+        Children = [.. Path.ChildDirectories().Select(child => new FileResource(child, true))];
     }
 
     public void Collapse() => Children = [CreateChildPlaceholder()];
@@ -34,13 +34,13 @@ public sealed class FileResource
             return null;
         }
 
-        return Children.Find(child => child.Path.GetName() == name);
+        return Children.Find(child => child.Path.Name() == name);
     }
 
     public FileNode ToNodeTree()
     {
         ObservableCollection<FileNode> subNodes = [.. Children.Select(child => child.ToNodeTree())];
-        return new(Path.GetName(), this, subNodes);
+        return new(Path.Name(), this, subNodes);
     }
 
     private FileResource CreateChildPlaceholder() => new(Path.Join(FileNode.LoadingPlaceholderTitle), false);

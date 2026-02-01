@@ -33,7 +33,6 @@ public class ConfigState
 
     private readonly ConsoleLogger<ConfigState> logger = new();
     private Config? currentConfig;
-    private PathLike? configFilePath;
 
     private ConfigState() { }
 
@@ -48,27 +47,33 @@ public class ConfigState
                 return new Config(currentConfig);
             }
 
-            PathLike? configPath = CreateAndGetConfigFilePath();
-            if (configPath == null)
-            {
-                logger.Log("Could not create config data path. Falling back to default config.");
-                return new Config();
-            }
-
+            PathLike configPath = GetConfigFilePath();
             logger.Log($"Using config path: [{configPath}]");
-
-            try
-            {
-                string configJson = File.ReadAllText(configPath.PathString);
-                currentConfig = JsonSerializer.Deserialize<Config>(configJson, ConfigSerializerOptions)!;
-            }
-            catch (Exception e)
-            {
-                logger.Error("Failed to load configuration from JSON file.", e);
-                currentConfig = new Config();
-            }
+            Config loaded = DoLoadConfig(configPath);
+            currentConfig = loaded;
 
             return new Config(currentConfig);
+        }
+    }
+
+    private Config DoLoadConfig(PathLike configFilePath)
+    {
+        if (!configFilePath.IsFile())
+        {
+            logger.Log("Config file not found. Using default config.");
+            return new Config();
+        }
+
+        try
+        {
+            string configJson = File.ReadAllText(configFilePath.PathString);
+            logger.Log($"Loading config: [{configJson}].");
+            return JsonSerializer.Deserialize<Config>(configJson, ConfigSerializerOptions)!;
+        }
+        catch (Exception e)
+        {
+            logger.Error("Failed to load configuration from JSON file.", e);
+            return new Config();
         }
     }
 
@@ -76,102 +81,35 @@ public class ConfigState
     {
         lock (SyncLock)
         {
-            PathLike? configPath = CreateAndGetConfigFilePath();
-            if (configPath == null)
+            logger.Log("Saving config...");
+            PathLike configPath = GetConfigFilePath();
+            if (!configPath.Parent().CreateDirectory())
             {
                 return false;
             }
-
-            logger.Log($"Saving config to: [{configPath}]");
 
             try
             {
-                string configJson = JsonSerializer.Serialize(nextConfig, ConfigSerializerOptions);
-                logger.Log($"Saving updated configuration: [{configJson}]");
-                File.WriteAllText(configPath.PathString, configJson);
+                logger.Log($"Saving config to: [{configPath}].");
+                string defaultConfigJson = JsonSerializer.Serialize(nextConfig, ConfigSerializerOptions);
+                logger.Log($"Writing config: [{defaultConfigJson}].");
+                File.WriteAllText(configPath.PathString, defaultConfigJson);
+                currentConfig = nextConfig;
+                return true;
             }
             catch (Exception e)
             {
-                logger.Error($"Failed to save configuration changes.", e);
+                logger.Error("Failed to save config.", e);
                 return false;
             }
-
-            currentConfig = new Config(nextConfig);
-            return true;
         }
     }
 
-    public PathLike? CreateAndGetConfigFilePath()
-    {
-        lock (SyncLock)
-        {
-            logger.Log("Getting config file path...");
-            if (configFilePath != null)
-            {
-                return configFilePath;
-            }
-
-            PathLike? configDataFolder = CreateAndGetConfigDirectory();
-            if (configDataFolder == null)
-            {
-                return null;
-            }
-
-            PathLike? configFile = CreateAndGetConfigFile(configDataFolder);
-            if (configFile == null)
-            {
-                return null;
-            }
-
-            configFilePath = configFile;
-            return configFile;
-        }
-    }
-
-    private PathLike? CreateAndGetConfigFile(PathLike configDataFolder)
-    {
-        PathLike configFile = configDataFolder.Join(ConfigFileName);
-        if (configFile.IsFile())
-        {
-            return configFile;
-        }
-
-        try
-        {
-            logger.Log($"Config file not found. Creating default config at: [{configFile}]");
-            string defaultConfigJson = JsonSerializer.Serialize(new Config(), ConfigSerializerOptions);
-            logger.Log($"Writing default config: [{defaultConfigJson}]");
-            File.WriteAllText(configFile.PathString, defaultConfigJson);
-            return configFile;
-        }
-        catch (Exception e)
-        {
-            logger.Error("Failed to create default config file.", e);
-            return null;
-        }
-    }
-
-    private PathLike? CreateAndGetConfigDirectory()
+    public static PathLike GetConfigFilePath()
     {
         string appDataRoamingPath = Environment
             .GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
-        PathLike configDataFolder = new PathLike(appDataRoamingPath).Join(AppName);
-        if (configDataFolder.IsDirectory())
-        {
-            return configDataFolder;
-        }
-
-        try
-        {
-            logger.Log($"Config data folder not found. Creating folder at: [{configDataFolder}]");
-            Directory.CreateDirectory(configDataFolder.PathString);
-            return configDataFolder;
-        }
-        catch (Exception e)
-        {
-            logger.Error("Failed to create data directory.", e);
-            return null;
-        }
+        return new PathLike(appDataRoamingPath).Join(AppName).Join(ConfigFileName);
     }
 }
