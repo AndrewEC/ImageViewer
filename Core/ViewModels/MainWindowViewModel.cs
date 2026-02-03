@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Immutable;
-using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -21,7 +20,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly string[] launchArguments;
     private readonly Grid mainGrid;
     private readonly TabStripItem firstItem;
-    private WindowState? previousWindowState;
+    private WindowState? previousWindowState = WindowState.Maximized;
 
     public MainWindowViewModel(MainWindow mainWindow, string[] launchArguments)
     {
@@ -31,6 +30,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         mainWindow.KeyUp += OnKeyUp;
         mainWindow.Resized += OnMainWindowResized;
+        mainWindow.WindowState = (WindowState)previousWindowState;
 
         mainGrid = mainWindow.FindControl<Grid>("MainGrid")!;
         firstItem = mainWindow.FindControl<TabStripItem>("FirstTabStripItem")!;
@@ -197,14 +197,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
                 logger.Log($"Setting initial selected image to [{resource.Path.PathString}].");
 
-                // Delay the simulated "selection" of an image after the loading parent folder.
-                // Resolves an issue where the app may stay on the Explorer tab instead of
-                // navigating to the Image tab.
-                Task.Run(async () =>
-                {
-                    await Task.Delay(500);
-                    AppState.Instance.SelectedImage = resource;
-                });
+                AppState.Instance.SelectedImage = resource;
 
                 return true;
             }

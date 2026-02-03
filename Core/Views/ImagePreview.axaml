@@ -11,17 +11,9 @@
 
     <DockPanel IsVisible="{Binding IsImageSelected}">
 
-        <StackPanel Orientation="Horizontal"
-            DockPanel.Dock="Top"
-            IsVisible="{Binding !IsSlideshowRunning}">
-
-            <Button Command="{Binding StopSlideshowCommand}"
+        <Button Command="{Binding StopSlideshowCommand}"
                 x:Name="StopSlideshowButton"
                 IsVisible="false">Stop Slideshow</Button>
-
-            <TextBlock Text="{Binding SelectedImage.Path.PathString}"
-                Margin="8,6,8,6"></TextBlock>
-        </StackPanel>
 
         <Grid x:Name="CanvasGrid">
             <Grid.ColumnDefinitions>

@@ -78,9 +78,13 @@ public partial class ExplorerViewModel : ViewModelBase
         if (e.AddedItems.Count == 1 && e.AddedItems[0] is FileNode node)
         {
             logger.Log($"User selected folder: [{node.Resource.Path.PathString}]");
-
             lastSelectedNode = node;
-            AppState.Instance.SelectedFolder = node.Resource;
+
+            if (!(AppState.Instance.SelectedFolder?.Path.Equals(node.Resource.Path) ?? false))
+            {
+                AppState.Instance.SelectedFolder = node.Resource;
+            }
+
             e.Handled = true;
         }
     }
