@@ -1,0 +1,77 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+
+             xmlns:viewmodel="using:ImageViewer.ViewModels"
+             xmlns:model="using:ImageViewer.Models"
+             x:Class="ImageViewer.Views.ImagePreview"
+             x:DataType="viewmodel:ImagePreviewViewModel">
+
+    <DockPanel IsVisible="{Binding IsImageSelected}">
+
+        <Button Command="{Binding StopSlideshowCommand}"
+                x:Name="StopSlideshowButton"
+                IsVisible="false">Stop Slideshow</Button>
+
+        <Grid x:Name="CanvasGrid" DragDrop.AllowDrop="True">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5*"></ColumnDefinition>
+                <ColumnDefinition Width="90*"></ColumnDefinition>
+                <ColumnDefinition Width="5*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+
+            <Button Classes="LeftArrow NavigationArrow"
+                Command="{Binding PreviousImageCommand}"
+                x:Name="PreviousButton"
+                IsEnabled="{Binding IsNavigationEnabled}"
+                IsVisible="{Binding !IsSlideshowRunning}"
+                Grid.Row="0"
+                Grid.Column="0">
+                <Button.Content>
+                    <TextBlock FontSize="30">&lt;</TextBlock>
+                </Button.Content>
+            </Button>
+
+            <Canvas x:Name="ImageCanvas"
+                Grid.Row="0"
+                Grid.Column="1"
+                ZIndex="-1"
+                ClipToBounds="True">
+
+                <Canvas.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Show in Explorer" Command="{Binding ShowInExplorerCommand}" />
+                        <MenuItem Header="Start Slideshow" Command="{Binding StartSlideshowCommand}" />
+                        <MenuItem Header="Delete" Command="{Binding DeleteImageCommand}" />
+                    </ContextMenu>
+                </Canvas.ContextMenu>
+
+                <Image Source="{Binding SelectedImage.Image^}"
+                    Width="{Binding ImageRect.Width}"
+                    Height="{Binding ImageRect.Height}"
+                    Canvas.Top="{Binding ImageRect.Y}"
+                    Canvas.Left="{Binding ImageRect.X}" />
+                
+                <Image x:Name="ReferenceImage"
+                    Source="{Binding SelectedImage.Image^}"
+                    Canvas.Top="1000000"
+                    Canvas.Left="1000000" />
+            </Canvas>
+
+            <Button Classes="RightArrow NavigationArrow"
+                Command="{Binding NextImageCommand}"
+                x:Name="NextButton"
+                IsEnabled="{Binding IsNavigationEnabled}"
+                IsVisible="{Binding !IsSlideshowRunning}"
+                Grid.Row="0"
+                Grid.Column="2">
+                <Button.Content>
+                    <TextBlock FontSize="30">&gt;</TextBlock>
+                </Button.Content>
+            </Button>
+        </Grid>
+    </DockPanel>
+
+</UserControl>
