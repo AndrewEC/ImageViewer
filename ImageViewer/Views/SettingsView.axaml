@@ -1,0 +1,90 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+
+             xmlns:viewmodel="using:ImageViewer.ViewModels"
+             xmlns:model="using:ImageViewer.Models"
+             x:Class="ImageViewer.Views.SettingsView"
+             x:DataType="viewmodel:SettingsViewModel">
+
+    <ScrollViewer>
+        <StackPanel Classes="SettingsColumn">
+
+            <StackPanel Classes="SettingsRow">
+                <StackPanel Classes="RowPadding" Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Margin="0,15,10,0">Slideshow Interval (Seconds):</TextBlock>
+                        <Slider Minimum="1" Maximum="60" MinWidth="200" Value="{Binding SlideshowIntervalSeconds}"/>
+                        <TextBlock Margin="10,15,10,0" Text="{Binding SlideshowIntervalSeconds}" />
+                    </StackPanel>
+                    <Panel Classes="SettingsRowDivider"></Panel>
+                    <TextBlock Classes="SettingHelpText">
+                        The number of seconds to wait before moving to the next image in the slideshow.
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Classes="SettingsRow">
+                <StackPanel Classes="RowPadding" Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Margin="0,6,10,0">Scan Depth: </TextBlock>
+                        <ComboBox SelectedIndex="{Binding ScanDepthSelectedIndex}" x:Name="SettingsViewScanDepth">
+                            <ComboBoxItem>1</ComboBoxItem>
+                            <ComboBoxItem>2</ComboBoxItem>
+                            <ComboBoxItem>3</ComboBoxItem>
+                        </ComboBox>
+                    </StackPanel>
+                    <Panel Classes="SettingsRowDivider"></Panel>
+                    <TextBlock Classes="SettingHelpText">
+                        The number of nested folders to scan for images whenever a
+                        folder is selected in the explorer tab. Larger numbers may reduce performance
+                        and increase load times.
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Classes="SettingsRow">
+                <StackPanel Classes="RowPadding" Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Margin="0,6,10,0">File Sort Method: </TextBlock>
+                        <ComboBox SelectedIndex="{Binding SortMethodIndex}">
+                            <ComboBoxItem>Natural</ComboBoxItem>
+                            <ComboBoxItem>Windows Like</ComboBoxItem>
+                        </ComboBox>
+                    </StackPanel>
+                    <Panel Classes="SettingsRowDivider"></Panel>
+                    <TextBlock Classes="SettingHelpText">
+                        "Windows Like" sorting will attempt to sort files numerically
+                        if the file name appears to be a number otherwise it is the same
+                        as "Natural" sorting which sorts files alphabetically by their
+                        name.
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Classes="SettingsRow">
+                <StackPanel Classes="RowPadding">
+                    <Button Command="{Binding SaveConfigCommand}"
+                        IsEnabled="{Binding HasUnsavedChanges}"
+                        x:Name="SettingsViewSaveButton">
+                        Save
+                    </Button>
+                    
+                    <Button Command="{Binding ResetConfigCommand}"
+                        IsEnabled="{Binding HasUnsavedChanges}"
+                        x:Name="SettingsViewResetButton">
+                        Reset
+                    </Button>
+                    
+                    <Button Command="{Binding OpenSettingsFolderCommand}">
+                        Open Settings Folder
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+
+             xmlns:viewmodel="using:ImageViewer.ViewModels"
+             xmlns:model="using:ImageViewer.Models"
+             x:Class="ImageViewer.Views.FolderPreview"
+             x:DataType="viewmodel:FolderPreviewViewModel">
+    
+    <ScrollViewer Classes="ImageList">
+        <ItemsControl ItemsSource="{Binding ImageResources}" x:Name="ItemsControl">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel>
+                        <Button
+                            Command="{Binding #ItemsControl.((viewmodel:FolderPreviewViewModel)DataContext).ImageClickedCommand}"
+                            CommandParameter="{Binding Path}"
+                            Classes="ThumbnailButton">
+                            <Button.Content>
+                                <Image Source="{Binding Thumbnail^}" Classes="PreviewImage"/>
+                            </Button.Content>
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Show in Explorer"
+                                        Command="{Binding #ItemsControl.((viewmodel:FolderPreviewViewModel)DataContext).ShowInExplorerCommand}"
+                                        CommandParameter="{Binding Path}"/>
+                                    <MenuItem Header="Start Slideshow"
+                                        Command="{Binding #ItemsControl.((viewmodel:FolderPreviewViewModel)DataContext).StartSlideshowCommand}"
+                                        CommandParameter="{Binding Path}" />
+                                    <MenuItem Header="Delete"
+                                        Command="{Binding #ItemsControl.((viewmodel:FolderPreviewViewModel)DataContext).DeleteImageCommand}"
+                                        CommandParameter="{Binding Path}" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                        <TextBlock Text="{Binding Name}" Classes="ImageNameLabel"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+    </ScrollViewer>
+
+</UserControl>

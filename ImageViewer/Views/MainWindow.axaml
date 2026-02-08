@@ -1,0 +1,63 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+
+        xmlns:vm="using:ImageViewer.ViewModels"
+        xmlns:view="using:ImageViewer.Views"
+
+        Title="ImageViewer"
+        Icon="/Assets/imageviewer-logo.ico"
+
+        d:DesignWidth="800"
+        d:DesignHeight="450"
+
+        x:Class="ImageViewer.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel">
+    
+    <Window.Styles>
+        <StyleInclude Source="/Styles/Styles.axaml" />
+    </Window.Styles>
+
+    <Grid x:Name="MainGrid" Classes="MainGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10*"></RowDefinition>
+            <RowDefinition Height="90*"></RowDefinition>
+        </Grid.RowDefinitions>
+
+        <TabStrip SelectedIndex="{Binding SelectedTabIndex}"
+            Classes="MainTabControl"
+            IsVisible="{Binding !IsSlideshowRunning}"
+            Grid.Row="0"
+            Grid.Column="0">
+
+            <TabStripItem x:Name="FirstTabStripItem">Explorer</TabStripItem>
+            <TabStripItem>Preview</TabStripItem>
+            <TabStripItem>Settings</TabStripItem>
+        </TabStrip>
+
+        <Panel IsVisible="{Binding ExplorerView}"
+            Grid.Row="1"
+            Grid.Column="0">
+
+            <Grid ColumnDefinitions="25*,0.05*,74.95*">
+                <view:ExplorerView Grid.Row="0" Grid.Column="0" />
+                <GridSplitter Grid.Row="0" Grid.Column="1" Background="#DDD" ResizeDirection="Columns"/>
+                <view:FolderPreview Grid.Row="0" Grid.Column="2" />
+            </Grid>
+        </Panel>
+
+        <Panel IsVisible="{Binding ImageView}"
+            Grid.Row="1"
+            Grid.Column="0">
+            <view:ImagePreview />
+        </Panel>
+
+        <Panel IsVisible="{Binding SettingsView}"
+            Grid.Row="1"
+            Grid.Column="0">
+            <view:SettingsView />
+        </Panel>
+    </Grid>
+</Window>
