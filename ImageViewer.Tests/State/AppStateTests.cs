@@ -34,8 +34,9 @@ public sealed class AppStateTests
 
         ImageResource imageResource = new(TestData.ImageFolderPath.Join(TestData.Images[0]));
 
-        mockScan.Setup(mock => mock.GetImageResources(It.IsAny<FileResource>()))
-            .Returns([imageResource]);
+        mockScan.Setup(mock => mock.GetImageResources(fileResource))
+            .Returns([imageResource])
+            .Verifiable();
 
         EventRecorder recorder = new(appState);
         appState.SelectedFolder = fileResource;
@@ -53,7 +54,7 @@ public sealed class AppStateTests
             Assert.That(recorder.ChangedProperties, Contains.Item(nameof(AppState.SelectedImage)));
         }
 
-        mockScan.Verify(mock => mock.GetImageResources(fileResource), Times.Once());
+        mockScan.VerifyAll();
     }
 
     [Test]
@@ -81,23 +82,22 @@ public sealed class AppStateTests
         PathLike root = new(@"C:\");
         FileResource rootResource = new(root, true);
         List<FileResource> rootResourceList = [rootResource];
-        PathLike child = root.Join("TestData");
+        PathLike startingPath = root.Join("TestData");
 
-        ImageResource imageResource = new(child.Join(TestData.Images[0]));
+        ImageResource imageResource = new(startingPath.Join(TestData.Images[0]));
 
-        mockScan.Setup(mock => mock.GetDriveRootResources())
-            .Returns(rootResourceList);
-
-        mockScan.Setup(mock => mock.GetImageResources(It.IsAny<FileResource>()))
-            .Returns([imageResource]);
+        mockScan.Setup(mock => mock.GetDriveRootResources()).Returns(rootResourceList).Verifiable();
         
-        mockScan.Setup(mock => mock.ExpandPath(It.IsAny<PathLike>(), It.IsAny<List<FileResource>>()))
+        mockScan.Setup(mock => mock.GetImageResources(null)).Returns([]).Verifiable();
+        mockScan.Setup(mock => mock.GetImageResources(rootResource)).Returns([imageResource]).Verifiable();
+        
+        mockScan.Setup(mock => mock.ExpandPath(startingPath, rootResourceList)).Verifiable();
+
+        mockScan.Setup(mock => mock.FindResourceInTree(startingPath, rootResourceList))
+            .Returns(rootResource)
             .Verifiable();
 
-        mockScan.Setup(mock => mock.FindResourceInTree(It.IsAny<PathLike>(), It.IsAny<List<FileResource>>()))
-            .Returns(rootResource);
-
-        appState.LoadStartingPath(child);
+        appState.LoadStartingPath(startingPath);
 
         Assert.That(appState.FileNodeTree, Is.Not.Null);
         using (Assert.EnterMultipleScope())
@@ -111,10 +111,7 @@ public sealed class AppStateTests
             Assert.That(appState.SelectedTabIndex, Is.EqualTo((int)Tabs.Folders));
         }
 
-        mockScan.Verify(mock => mock.GetDriveRootResources(), Times.Once());
-        mockScan.Verify(mock => mock.GetImageResources(rootResource), Times.Once());
-        mockScan.Verify(mock => mock.ExpandPath(child, rootResourceList), Times.Once());
-        mockScan.Verify(mock => mock.FindResourceInTree(child, rootResourceList), Times.Once());
+        mockScan.VerifyAll();
     }
 
     private sealed class EventRecorder
@@ -124,11 +121,11 @@ public sealed class AppStateTests
             appState.PropertyChanged += OnPropertyChanged;
         }
 
-        public List<string> ChangedProperties { get; } = [];
+        public List<string?> ChangedProperties { get; } = [];
 
         private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            ChangedProperties.Add(e.PropertyName ?? string.Empty);
+            ChangedProperties.Add(e.PropertyName);
         }
     }
 }

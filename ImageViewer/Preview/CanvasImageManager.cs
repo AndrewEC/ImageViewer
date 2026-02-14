@@ -2,7 +2,7 @@ namespace ImageViewer.Preview;
 
 using System;
 using Avalonia;
-using ImageViewer.ViewModels;
+using ImageViewer.Models;
 
 public sealed class CanvasImageManager
 {

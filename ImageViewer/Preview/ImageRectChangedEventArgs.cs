@@ -1,7 +1,7 @@
 namespace ImageViewer.Preview;
 
 using System;
-using ImageViewer.ViewModels;
+using ImageViewer.Models;
 
 public sealed class ImageRectChangedEventArgs(ImageRect rect) : EventArgs
 {

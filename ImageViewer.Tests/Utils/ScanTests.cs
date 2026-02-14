@@ -29,10 +29,11 @@ public sealed class ScanTests
             SortMethod = SortMethod.Natural,
             ScanDepth = 2
         };
-        mockConfigState.Setup(mock => mock.LoadConfig()).Returns(config);
+        mockConfigState.Setup(mock => mock.LoadConfig()).Returns(config).Verifiable();
 
-        mockSorting.Setup(mock => mock.GetComparer(It.IsAny<SortMethod>()))
-            .Returns(new Sorting.NaturalComparer());
+        mockSorting.Setup(mock => mock.GetComparer(SortMethod.Natural))
+            .Returns(new Sorting.NaturalComparer())
+            .Verifiable();
         
         FileResource imageFolder = new(TestData.ImageFolderPath, false);
         List<ImageResource> images = scan.GetImageResources(imageFolder);
@@ -46,12 +47,12 @@ public sealed class ScanTests
             Assert.That(imagePaths[2].Name(), Is.EqualTo(TestData.Images[2]));
         }
 
-        mockConfigState.Verify(mock => mock.LoadConfig(), Times.Once());
-        mockSorting.Verify(mock => mock.GetComparer(SortMethod.Natural), Times.Once());
+        mockConfigState.VerifyAll();
+        mockSorting.VerifyAll();
     }
 
     [Test]
-    public void ExpandPath_FindResourceInTree()
+    public void ExpandPath_And_FindResourceInTree()
     {
         List<FileResource> rootResources = [new(TestData.CRoot, true)];
 

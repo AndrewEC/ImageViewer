@@ -1,4 +1,4 @@
-namespace ImageViewer.ViewModels;
+namespace ImageViewer.Models;
 
 public readonly record struct ImageRect(int Width, int Height, int X, int Y)
 {
