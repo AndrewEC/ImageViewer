@@ -78,6 +78,7 @@ public sealed class ImageCache : IImageCache
 
         logger.Log($"Loading image [{path}] with key [{cacheKey}]");
 
+        // Try and see if the image already exists in the cache and return it.
         lock (SyncLock)
         {
             if (cache.TryGetValue(cacheKey, out CacheEntry? entry))
@@ -89,6 +90,8 @@ public sealed class ImageCache : IImageCache
             }
         }
 
+        // If the image does not exist in the cache then load it.
+        // Ensure this is outside of the lock so we don't block the loading of other images.
         Bitmap? newImage = null;
         try
         {
@@ -112,6 +115,7 @@ public sealed class ImageCache : IImageCache
 
         lock (SyncLock)
         {
+            // One last time check if the image has been cached since the first dirty check and this one.
             if (cache.TryGetValue(cacheKey, out CacheEntry? entry))
             {
                 return (Bitmap?)entry.Bitmap;

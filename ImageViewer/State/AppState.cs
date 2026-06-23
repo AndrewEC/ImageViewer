@@ -118,20 +118,20 @@ public sealed class AppState(IScan scan) : IAppState
             return;
         }
 
+        PathLike? previouslySelectedImagePath = SelectedImage?.Path;
         SelectedFolderResources = [.. SelectedFolderResources.Where(r => !r.Path.Equals(resourceToRemove.Path))];
 
         if (SelectedFolderResources.Count > 0)
         {
             if (SelectedTabIndex == (int)Tabs.ImagePreview
-                && SelectedImage != null
-                && SelectedImage.Path.Equals(resourceToRemove.Path))
+                && resourceToRemove.Path.Equals(previouslySelectedImagePath))
             {
                 SelectedImage = SelectedFolderResources[0];
             }
         }
         else
         {
-            SelectedImage = null;
+            SelectedTabIndex = (int)Tabs.Folders;
         }
     }
 
