@@ -118,21 +118,41 @@ public sealed class AppState(IScan scan) : IAppState
             return;
         }
 
-        PathLike? previouslySelectedImagePath = SelectedImage?.Path;
-        SelectedFolderResources = [.. SelectedFolderResources.Where(r => !r.Path.Equals(resourceToRemove.Path))];
+        int selectedImageIndex = GetImageIndex(SelectedImage);
+        int removeIndex = GetImageIndex(resourceToRemove);
+        SelectedFolderResources = Enumerable.Range(0, SelectedFolderResources.Count)
+            .Where(i => i != removeIndex)
+            .Select(i => SelectedFolderResources[i])
+            .ToList();
 
         if (SelectedFolderResources.Count > 0)
         {
             if (SelectedTabIndex == (int)Tabs.ImagePreview
-                && resourceToRemove.Path.Equals(previouslySelectedImagePath))
+                && selectedImageIndex == removeIndex)
             {
-                SelectedImage = SelectedFolderResources[0];
+                if (selectedImageIndex >= SelectedFolderResources.Count)
+                {
+                    SelectedImage = SelectedFolderResources[^1];
+                }
+                else
+                {
+                    SelectedImage = SelectedFolderResources[selectedImageIndex];
+                }
             }
         }
         else
         {
             SelectedTabIndex = (int)Tabs.Folders;
         }
+    }
+
+    private int GetImageIndex(ImageResource? imageResource)
+    {
+        if (imageResource == null)
+        {
+            return -1;
+        }
+        return SelectedFolderResources.FindIndex(resource => resource.Equals(imageResource));
     }
 
     public void LoadStartingPath(PathLike startingPath)

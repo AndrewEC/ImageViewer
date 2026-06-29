@@ -109,31 +109,27 @@ public sealed class CanvasImageManager
     {
         double maxWidth = CanvasSize.Width;
         double maxHeight = CanvasSize.Height;
-        
+
         double imageWidth = ImageSize.Width;
         double imageHeight = ImageSize.Height;
 
-        if (imageWidth <= maxWidth && imageHeight <= maxHeight)
+        if (imageWidth > maxWidth)
         {
-            int width = (int) (imageWidth * (ImageScale / 100.0));
-            int height = (int) (imageHeight * (ImageScale / 100.0));
-            return current.WithWidth(width).WithHeight(height);
+            double scaleDown = imageWidth / maxWidth;
+            imageWidth = maxWidth;
+            imageHeight /= scaleDown;
         }
 
-        double ratio;
-        if (imageWidth - maxWidth > imageHeight - maxHeight)
+        if (imageHeight > maxHeight)
         {
-            ratio = maxWidth / imageWidth;
-        }
-        else
-        {
-            ratio = maxHeight / imageHeight;
+            double scaleDown = imageHeight / maxHeight;
+            imageHeight = maxHeight;
+            imageWidth /= scaleDown;
         }
 
-        int newWidth = (int) (imageWidth * ratio * (ImageScale / 100.0));
-        int newHeight = (int) (imageHeight * ratio * (ImageScale / 100.0));
-
-        return current.WithWidth(newWidth).WithHeight(newHeight);
+        return current
+            .WithWidth((int) (imageWidth * (ImageScale / 100.0)))
+            .WithHeight((int) (imageHeight * (ImageScale / 100.0)));
     }
     
 }

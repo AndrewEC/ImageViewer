@@ -13,7 +13,7 @@
         <TextBox x:Name="ExplorerPathInput"
             Grid.Row="0"
             Grid.Column="0"
-            Text="{Binding CurrentPath}"
+            Text="{Binding SelectedFolderPathString}"
             Classes="ExplorerPath">
 
             <TextBox.KeyBindings>

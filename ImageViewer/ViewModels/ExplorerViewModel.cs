@@ -48,7 +48,7 @@ public partial class ExplorerViewModel : ViewModelBase
                 () =>
                 {
                     lastSelectedNode = null;
-                    CurrentPath = appState.SelectedFolder?.Path.PathString ?? string.Empty;
+                    SelectedFolderPathString = appState.SelectedFolder?.Path.PathString ?? string.Empty;
                 }
             },
         });
@@ -74,7 +74,7 @@ public partial class ExplorerViewModel : ViewModelBase
         }
     }
 
-    public string CurrentPath
+    public string SelectedFolderPathString
     {
         get;
         set => this.RaiseAndSetIfChanged(ref field, value);
@@ -113,6 +113,9 @@ public partial class ExplorerViewModel : ViewModelBase
             if (IsLastSelectedNode(treeViewModel)
                 || IsNodeMatchingCurrentPath(treeViewModel))
             {
+                // If we have a non-zero lastScrollOffset saved then skip scrolling
+                // the tree view item into view here. It will instead be done in the
+                // setter of the TreeNodes property.
                 if (lastScrollOffset == Vector.Zero)
                 {
                     treeView.AutoScrollToSelectedItem = true;
@@ -131,7 +134,7 @@ public partial class ExplorerViewModel : ViewModelBase
         => lastSelectedNode != null && treeViewModel.Resource.Path.Equals(lastSelectedNode.Resource.Path);
 
     private bool IsNodeMatchingCurrentPath(FileNode treeViewModel)
-        => CurrentPath != string.Empty && treeViewModel.Resource.Path.PathString == CurrentPath;
+        => SelectedFolderPathString != string.Empty && treeViewModel.Resource.Path.PathString == SelectedFolderPathString;
 
     /// <summary>
     /// This method will be invoked whenever a property of a tree node is updated
@@ -146,6 +149,10 @@ public partial class ExplorerViewModel : ViewModelBase
             return;
         }
 
+        // canExpandOrCollapse is used to help prevent this method from
+        // expanding/collapsing a node in an infinite loop. This value will
+        // be set to false by various callbacks when the user performs a
+        // respective action.
         if (!canExpandOrCollapse)
         {
             return;
@@ -174,9 +181,9 @@ public partial class ExplorerViewModel : ViewModelBase
 
     private async void UpdatePath()
     {
-        logger.Log($"Updating path to: [{CurrentPath}].");
+        logger.Log($"Updating path to: [{SelectedFolderPathString}].");
 
-        PathLike target = new(CurrentPath);
+        PathLike target = new(SelectedFolderPathString);
         if (!target.IsDirectory())
         {
             logger.Log("Requested path could not be found.");

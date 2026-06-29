@@ -19,9 +19,9 @@ public sealed class DragManager
     {
         this.targetElement = targetElement;
 
-        this.targetElement.PointerPressed += OnCanvasPointerPressed;
-        this.targetElement.PointerReleased += OnCavasPointerReleased;
-        this.targetElement.PointerMoved += OnCanvasPointerMoved;
+        this.targetElement.PointerPressed += OnElementPointerPressed;
+        this.targetElement.PointerReleased += OnElementPointerReleased;
+        this.targetElement.PointerMoved += OnElementPointerMoved;
     }
 
     public void Reset()
@@ -31,7 +31,7 @@ public sealed class DragManager
         lastDelta = new Point();
     }
 
-    private void OnCanvasPointerMoved(object? sender, PointerEventArgs e)
+    private void OnElementPointerMoved(object? sender, PointerEventArgs e)
     {
         if (sender != targetElement || !dragging)
         {
@@ -45,7 +45,7 @@ public sealed class DragManager
         ElementDragged?.Invoke(this, new InputElementDraggedEventArgs(delta));
     }
 
-    private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e)
+    private void OnElementPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender != targetElement || !e.Properties.IsLeftButtonPressed)
         {
@@ -57,9 +57,9 @@ public sealed class DragManager
         start = e.GetCurrentPoint(null).Position;
     }
 
-    private void OnCavasPointerReleased(object? sender, PointerReleasedEventArgs e)
+    private void OnElementPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
-        if (sender != targetElement)
+        if (sender != targetElement || !dragging)
         {
             return;
         }
