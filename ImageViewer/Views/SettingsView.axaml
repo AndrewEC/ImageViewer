@@ -29,6 +29,18 @@
             <StackPanel Classes="SettingsRow">
                 <StackPanel Classes="RowPadding" Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
+                        <CheckBox Margin="0,6,10,0" IsChecked="{Binding RandomizeSlideshowChecked}">Randomize Slideshow</CheckBox>
+                    </StackPanel>
+                    <Panel Classes="SettingsRowDivider"></Panel>
+                    <TextBlock Classes="SettingHelpText">
+                        Randomize the order in which images are presented during the slideshow.
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Classes="SettingsRow">
+                <StackPanel Classes="RowPadding" Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
                         <TextBlock Margin="0,6,10,0">Scan Depth: </TextBlock>
                         <ComboBox SelectedIndex="{Binding ScanDepthSelectedIndex}" x:Name="SettingsViewScanDepth">
                             <ComboBoxItem>1</ComboBoxItem>

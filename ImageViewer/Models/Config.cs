@@ -7,13 +7,14 @@ public sealed class Config
     public Config() { }
 
     public Config(Config source)
-        : this(source.SlideshowIntervalMillis, source.ScanDepth, source.SortMethod) { }
+        : this(source.SlideshowIntervalMillis, source.ScanDepth, source.SortMethod, source.RandomizeSlideshow) { }
 
-    public Config(int slideshowIntervalMillis, int scanDepth, SortMethod sortMethod)
+    public Config(int slideshowIntervalMillis, int scanDepth, SortMethod sortMethod, bool randomizeSlideshow)
     {
         SlideshowIntervalMillis = slideshowIntervalMillis;
         ScanDepth = scanDepth;
         SortMethod = sortMethod;
+        RandomizeSlideshow = randomizeSlideshow;
     }
 
     public int SlideshowIntervalMillis { get; set; } = 5_000;
@@ -22,11 +23,14 @@ public sealed class Config
 
     public SortMethod SortMethod { get; set; } = SortMethod.WindowsLike;
 
+    public bool RandomizeSlideshow { get; set; }
+
     public override bool Equals(object? obj) => obj is Config other
         && other.SlideshowIntervalMillis == SlideshowIntervalMillis
         && other.ScanDepth == ScanDepth
-        && other.SortMethod == SortMethod;
+        && other.SortMethod == SortMethod
+        && other.RandomizeSlideshow == RandomizeSlideshow;
 
     public override int GetHashCode()
-        => HashCode.Combine(SlideshowIntervalMillis, ScanDepth, SortMethod);
+        => HashCode.Combine(SlideshowIntervalMillis, ScanDepth, SortMethod, RandomizeSlideshow);
 }

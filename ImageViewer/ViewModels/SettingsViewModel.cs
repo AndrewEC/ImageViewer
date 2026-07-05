@@ -30,6 +30,7 @@ public partial class SettingsViewModel : ViewModelBase
         SlideshowIntervalSeconds = initialConfig.SlideshowIntervalMillis / 1000.0;
         ScanDepthSelectedIndex = initialConfig.ScanDepth - 1;
         SortMethodIndex = (int)initialConfig.SortMethod;
+        RandomizeSlideshowChecked = initialConfig.RandomizeSlideshow;
     }
 
     public ReactiveCommand<Unit, Unit> SaveConfigCommand { get; }
@@ -50,6 +51,16 @@ public partial class SettingsViewModel : ViewModelBase
         set
         {
             this.RaiseAndSetIfChanged(ref field, Math.Round(value));
+            HasUnsavedChanges = HasConfigChanged();
+        }
+    }
+
+    public bool RandomizeSlideshowChecked
+    {
+        get;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref field, value);
             HasUnsavedChanges = HasConfigChanged();
         }
     }
@@ -81,6 +92,7 @@ public partial class SettingsViewModel : ViewModelBase
         SlideshowIntervalMillis = (int)(SlideshowIntervalSeconds * 1000),
         ScanDepth = ScanDepthSelectedIndex + 1,
         SortMethod = (SortMethod)SortMethodIndex,
+        RandomizeSlideshow = RandomizeSlideshowChecked
     };
 
     private async void SaveConfig()
@@ -109,6 +121,7 @@ public partial class SettingsViewModel : ViewModelBase
         SlideshowIntervalSeconds = initialConfig.SlideshowIntervalMillis / 1000.0;
         ScanDepthSelectedIndex = initialConfig.ScanDepth - 1;
         SortMethodIndex = (int)initialConfig.SortMethod;
+        RandomizeSlideshowChecked = initialConfig.RandomizeSlideshow;
 
         HasUnsavedChanges = false;
     }

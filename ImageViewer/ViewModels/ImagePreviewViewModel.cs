@@ -36,8 +36,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
     private readonly Grid canvasGrid;
     private readonly DragManager canvasDragManager;
     private readonly CanvasImageManager canvasImageManager;
-
-    private Timer? slideshowTimer;
+    private readonly SlideshowManager slideshowManager;
 
     public ImagePreviewViewModel(ImagePreview parent)
     {
@@ -80,18 +79,22 @@ public partial class ImagePreviewViewModel : ViewModelBase
         referenceImage = parent.FindControl<Image>("ReferenceImage")!;
         referenceImage.SizeChanged += OnReferenceImageSizeChanged;
 
+        Button nextButton = parent.FindControl<Button>("NextButton")!;
+        HotKeyManager.SetHotKey(nextButton, new KeyGesture(Key.D));
+
+        Button previousButton = parent.FindControl<Button>("PreviousButton")!;
+        HotKeyManager.SetHotKey(previousButton, new KeyGesture(Key.A));
+
+        Button stopSlideshowButton = parent.FindControl<Button>("StopSlideshowButton")!;
+        HotKeyManager.SetHotKey(stopSlideshowButton, new KeyGesture(Key.Escape));
+
         canvasDragManager = new DragManager(canvas);
         canvasDragManager.ElementDragged += OnCanvasDragged;
 
         canvasImageManager = new CanvasImageManager();
         canvasImageManager.ImageRectChanged += OnImageRectChanged;
 
-        Button nextButton = parent.FindControl<Button>("NextButton")!;
-        Button previousButton = parent.FindControl<Button>("PreviousButton")!;
-        Button stopSlideshowButton = parent.FindControl<Button>("StopSlideshowButton")!;
-        HotKeyManager.SetHotKey(nextButton, new KeyGesture(Key.D));
-        HotKeyManager.SetHotKey(previousButton, new KeyGesture(Key.A));
-        HotKeyManager.SetHotKey(stopSlideshowButton, new KeyGesture(Key.Escape));
+        slideshowManager = new(appState, configState);
     }
 
     public ReactiveCommand<Unit, Unit> NextImageCommand { get; }
@@ -134,12 +137,12 @@ public partial class ImagePreviewViewModel : ViewModelBase
             canvasDragManager.Reset();
             if (value)
             {
-                StartSlideshow();
+                slideshowManager.StartSlideshow();
                 GridUtil.ResizeColumns(canvasGrid, SlideshowColumnSizes);
             }
             else
             {
-                StopSlideshowTimer();
+                slideshowManager.StopSlideshow();
                 GridUtil.ResizeColumns(canvasGrid, NormalColumnSizes);
             }
         }
@@ -292,37 +295,6 @@ public partial class ImagePreviewViewModel : ViewModelBase
     private void SetSlideshowTrue() => appState.IsSlideshowRunning = true;
 
     private void SetSlideshowFalse() => appState.IsSlideshowRunning = false;
-
-    private void StartSlideshow()
-    {
-        logger.Log("Starting slideshow...");
-        if (slideshowTimer != null)
-        {
-            return;
-        }
-
-        StopSlideshowTimer();
-
-        int interval = configState.LoadConfig().SlideshowIntervalMillis;
-        logger.Log($"Starting slideshow timer with interval of: [{interval}]");
-        slideshowTimer = new Timer(interval);
-        slideshowTimer.Elapsed += (sender, e) => NextImage();
-        slideshowTimer.AutoReset = true;
-        slideshowTimer.Enabled = true;
-    }
-
-    private void StopSlideshowTimer()
-    {
-        if (slideshowTimer == null)
-        {
-            return;
-        }
-
-        logger.Log("Stopping slideshow timer.");
-        slideshowTimer.Stop();
-        slideshowTimer.Dispose();
-        slideshowTimer = null;
-    }
 
     private async void DeleteImage()
     {

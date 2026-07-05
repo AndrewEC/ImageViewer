@@ -19,6 +19,8 @@ public interface IAppState : INotifyPropertyChanged
 
     ImageResource? SelectedImage { get; set; }
 
+    public int SelectedImageIndex { get; set; }
+
     int SelectedTabIndex { get; set; }
 
     void RemoveCurrentlySelectedImageFromFolderResources();
@@ -94,9 +96,12 @@ public sealed class AppState(IScan scan) : IAppState
             if (value != null)
             {
                 SelectedTabIndex = (int)Tabs.ImagePreview;
+                SelectedImageIndex = GetImageIndex(value);
             }
         }
     }
+
+    public int SelectedImageIndex { get; set; } = -1;
 
     public int SelectedTabIndex
     {

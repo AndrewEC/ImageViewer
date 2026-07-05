@@ -12,6 +12,7 @@ using ImageViewer.Utils;
 [JsonSerializable(typeof(Config))]
 [JsonSerializable(typeof(SortMethod))]
 [JsonSerializable(typeof(int))]
+[JsonSerializable(typeof(bool))]
 internal partial class ConfigContext : JsonSerializerContext
 {
 }
