@@ -24,7 +24,7 @@ public sealed class ImageCache : IImageCache
     private static readonly int ThumbnailHeight = 300;
     private static readonly int TimerTickInterval = 1000 * 60; // 1 minute in milliseconds.
     private static readonly int CacheEntryTimeToLiveMillis = 1000 * 60 * 10; // 10 minutes in milliseconds.
-    private static readonly int MaxCacheSize = 30;
+    private static readonly int MaxCacheSize = 10;
 
     private readonly ConsoleLogger<ImageCache> logger = new();
 
@@ -139,22 +139,9 @@ public sealed class ImageCache : IImageCache
 
         logger.Log("Popping oldest item from cache.");
 
-        string oldestKey = imageKeys[0];
-        CacheEntry oldestEntry = cache[oldestKey];
-        foreach (string nextKey in imageKeys)
-        {
-            if (nextKey == oldestKey)
-            {
-                continue;
-            }
-
-            CacheEntry nextEntry = cache[nextKey];
-            if (nextEntry.Timestamp < oldestEntry.Timestamp)
-            {
-                oldestKey = nextKey;
-                oldestEntry = nextEntry;
-            }
-        }
+        (string oldestKey, CacheEntry oldestEntry) = imageKeys.Select(key => (key, cache[key]))
+            .OrderBy(entry => entry.Item2.Timestamp)
+            .First();
 
         logger.Log($"Found oldest image item with key: [{oldestKey}].");
         cache.Remove(oldestKey);
