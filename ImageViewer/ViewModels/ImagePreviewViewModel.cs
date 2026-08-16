@@ -3,7 +3,6 @@ namespace ImageViewer.ViewModels;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reactive;
-using System.Timers;
 using Avalonia.Controls;
 using Avalonia.Input;
 using ImageViewer.Preview;
@@ -95,6 +94,13 @@ public partial class ImagePreviewViewModel : ViewModelBase
         canvasImageManager.ImageRectChanged += OnImageRectChanged;
 
         slideshowManager = new(appState, configState);
+        Handlers.RegisterPropertyChangeHandler(slideshowManager, new()
+        {
+            {
+                nameof(slideshowManager.ImageIndex),
+                OnSlideshowIndexUpdated
+            }
+        });
     }
 
     public ReactiveCommand<Unit, Unit> NextImageCommand { get; }
@@ -138,11 +144,13 @@ public partial class ImagePreviewViewModel : ViewModelBase
             if (value)
             {
                 slideshowManager.StartSlideshow();
+                PreloadImage = appState.SelectedFolderResources[slideshowManager.PeekNextImageIndex()];
                 GridUtil.ResizeColumns(canvasGrid, SlideshowColumnSizes);
             }
             else
             {
                 slideshowManager.StopSlideshow();
+                PreloadImage = null;
                 GridUtil.ResizeColumns(canvasGrid, NormalColumnSizes);
             }
         }
@@ -159,6 +167,12 @@ public partial class ImagePreviewViewModel : ViewModelBase
             canvasDragManager.Reset();
             canvasImageManager.Reset();
         }
+    }
+
+    public ImageResource? PreloadImage
+    {
+        get;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
     private void OnImageRectChanged(object? sender, ImageRectChangedEventArgs e)
@@ -330,5 +344,11 @@ public partial class ImagePreviewViewModel : ViewModelBase
         }
 
         Process.Start("explorer.exe", "/select," + SelectedImage.Path.PathString);
+    }
+
+    private void OnSlideshowIndexUpdated()
+    {
+        appState.SelectedImage = appState.SelectedFolderResources[slideshowManager.ImageIndex];
+        PreloadImage = appState.SelectedFolderResources[slideshowManager.PeekNextImageIndex()];
     }
 }

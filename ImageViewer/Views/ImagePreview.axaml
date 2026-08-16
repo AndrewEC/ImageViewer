@@ -58,6 +58,11 @@
                     Source="{Binding SelectedImage.Image^}"
                     Canvas.Top="1000000"
                     Canvas.Left="1000000" />
+                
+                <Image x:Name="PreloadImage"
+                    Source="{Binding PreloadImage.Image^}"
+                    Canvas.Top="1000000"
+                    Canvas.Left="1000000" />
             </Canvas>
 
             <Button Classes="RightArrow NavigationArrow"

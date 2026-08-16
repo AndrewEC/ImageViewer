@@ -1,6 +1,7 @@
 namespace ImageViewer.Preview;
 
 using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Timers;
 using ImageViewer.Models;
@@ -8,7 +9,7 @@ using ImageViewer.State;
 using ImageViewer.Utils;
 
 #pragma warning disable CA1001
-public sealed class SlideshowManager(IAppState state, IConfigState configState)
+public sealed class SlideshowManager(IAppState state, IConfigState configState) : INotifyPropertyChanged
 #pragma warning restore CA1001
 {
     private readonly ConsoleLogger<SlideshowManager> logger = new();
@@ -16,6 +17,10 @@ public sealed class SlideshowManager(IAppState state, IConfigState configState)
     private int[] imageOrder = [];
     private int currentIndex = -1;
     private Timer? slideshowTimer;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public int ImageIndex { get; set; }
 
     public void StartSlideshow()
     {
@@ -72,6 +77,10 @@ public sealed class SlideshowManager(IAppState state, IConfigState configState)
         int nextIndex = (currentIndex + 1) % state.SelectedFolderResources.Count;
         logger.Log($"Slideshow timer ticked. Moving from index [{currentIndex}], to [{nextIndex}].");
         currentIndex = nextIndex;
-        state.SelectedImage = state.SelectedFolderResources[imageOrder[nextIndex]];
+        // state.SelectedImage = state.SelectedFolderResources[imageOrder[nextIndex]];
+        ImageIndex = imageOrder[nextIndex];
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ImageIndex)));
     }
+
+    public int PeekNextImageIndex() => imageOrder[(currentIndex + 1) % state.SelectedFolderResources.Count];
 }
