@@ -87,6 +87,8 @@ public partial class ExplorerViewModel : ViewModelBase
             logger.Log($"User selected folder: [{node.Resource.Path.PathString}]");
             lastSelectedNode = node;
 
+            // If the folder the user selected in the tree was already selected then
+            // don't update the appstate.
             if (!(appState.SelectedFolder?.Path.Equals(node.Resource.Path) ?? false))
             {
                 appState.SelectedFolder = node.Resource;

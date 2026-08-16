@@ -82,16 +82,12 @@ public class Scan(IConfigState configState, ISorting sorting) : IScan
     /// <summary>
     /// Attempts to "expand" all the directories specified in the startingPath.
     /// <para>
-    /// To "expand" a directory means to identify, and keep a reference to, all the
-    /// directories that are direct children of the directory being expanded. (Direct meaning
-    /// no recursive searches for nested children directories.)
-    /// </para>
-    /// <para>
     /// For example given the path "C:\albums\nature" this method will first look for the root
-    /// drive C:\ within the rootResources. Then it will "expand" the C:\ directory by looking
-    /// up all the directories directly within C:\ and keeping a reference to them. Then it will
-    /// look for a directory within C:\ called "albums" and repeat the process for both "albums"
-    /// and for the "nature" directories.
+    /// drive C:\ within the list rootResources. Then it will "expand" the C:\ directory by looking
+    /// up all the directories directly within C:\ and keeping a reference to them. It may
+    /// find folders like "albums", "songs" and "videos". Then it will take the "albums" folder
+    /// "C:\albums" and identify all of its immediate children. It may find the folders "nature"
+    /// and "urban". It will then repeat this process with the "nature" folder.
     /// </para>
     /// </summary>
     public void ExpandPath(PathLike startingPath, List<FileResource> rootResources)

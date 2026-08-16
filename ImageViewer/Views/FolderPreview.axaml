@@ -9,7 +9,7 @@
              x:Class="ImageViewer.Views.FolderPreview"
              x:DataType="viewmodel:FolderPreviewViewModel">
     
-    <ScrollViewer Classes="ImageList">
+    <ScrollViewer Classes="ImageList" x:Name="ImageScrollViewer">
         <ItemsControl ItemsSource="{Binding ImageResources}" x:Name="ItemsControl">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -25,7 +25,7 @@
                             CommandParameter="{Binding Path}"
                             Classes="ThumbnailButton">
                             <Button.Content>
-                                <Image Source="{Binding Thumbnail^}" Classes="PreviewImage"/>
+                                <Image Classes="PreviewImage"/>
                             </Button.Content>
                             <Button.ContextMenu>
                                 <ContextMenu>

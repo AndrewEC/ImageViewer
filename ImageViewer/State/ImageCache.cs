@@ -18,9 +18,14 @@ public interface IImageCache
 
 public sealed class ImageCache : IImageCache
 {
+    public enum ImageType
+    {
+        Image,
+        Thumbnail
+    }
+
     private static readonly System.Threading.Lock SyncLock = new();
     private static readonly string ImageKeyPrefix = "image-";
-    private static readonly string ThumbnailKeyPrefix = "thumnail-";
     private static readonly int ThumbnailHeight = 300;
     private static readonly int TimerTickInterval = 1000 * 60; // 1 minute in milliseconds.
     private static readonly int CacheEntryTimeToLiveMillis = 1000 * 60 * 10; // 10 minutes in milliseconds.
@@ -67,16 +72,16 @@ public sealed class ImageCache : IImageCache
     private static long CurrentTimestamp() => DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     public Task<Bitmap?> LoadImage(string path)
-        => Task.Run(() => DoLoadImage(path, ImageKeyPrefix));
+        => Task.Run(() => DoLoadImage(path));
 
     public Task<Bitmap?> LoadThumbnail(string path)
-        => Task.Run(() => DoLoadImage(path, ThumbnailKeyPrefix));
+        => Task.Run(() => ReadImageFromFile(path, ImageType.Thumbnail));
 
-    private Bitmap? DoLoadImage(string path, string keyPrefix)
+    private Bitmap? DoLoadImage(string path)
     {
-        string cacheKey = keyPrefix + path;
+        string cacheKey = path;
 
-        logger.Log($"Loading image [{path}] with key [{cacheKey}]");
+        logger.Log($"Loading cacheable image [{path}] with key [{cacheKey}]");
 
         // Try and see if the image already exists in the cache and return it.
         lock (SyncLock)
@@ -92,24 +97,9 @@ public sealed class ImageCache : IImageCache
 
         // If the image does not exist in the cache then load it.
         // Ensure this is outside of the lock so we don't block the loading of other images.
-        Bitmap? newImage = null;
-        try
+        Bitmap? newImage = ReadImageFromFile(path, ImageType.Image);
+        if (newImage == null)
         {
-            using (FileStream stream = File.OpenRead(path))
-            {
-                if (keyPrefix == ThumbnailKeyPrefix)
-                {
-                    newImage = Bitmap.DecodeToHeight(stream, ThumbnailHeight, BitmapInterpolationMode.LowQuality);
-                }
-                else
-                {
-                    newImage = new Bitmap(stream);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            logger.Error($"Failed to load image [{path}].", e);
             return null;
         }
 
@@ -126,6 +116,30 @@ public sealed class ImageCache : IImageCache
                 TryPopOldestImageEntry();
                 return newImage;
             }
+        }
+    }
+
+    private Bitmap? ReadImageFromFile(string path, ImageType imageType)
+    {
+        logger.Log($"Reading image of type [{imageType}] from file: [{path}]");
+        try
+        {
+            using (FileStream stream = File.OpenRead(path))
+            {
+                if (imageType == ImageType.Thumbnail)
+                {
+                    return Bitmap.DecodeToHeight(stream, ThumbnailHeight, BitmapInterpolationMode.LowQuality);
+                }
+                else
+                {
+                    return new Bitmap(stream);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            logger.Error($"Failed to load image [{path}].", e);
+            return null;
         }
     }
 

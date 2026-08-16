@@ -28,7 +28,7 @@ public sealed class Initializer(IAppState appState, IScan scan) : IInitializer
             if (!scan.IsPotentiallyImageFile(path))
             {
                 logger.Log("Argument was a file but didn't have a supported image extension.");
-                return false;
+                return InitializeAppFromPath(path.Parent());
             }
 
             PathLike parentDirectory = path.Parent();

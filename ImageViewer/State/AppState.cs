@@ -98,6 +98,10 @@ public sealed class AppState(IScan scan) : IAppState
                 SelectedTabIndex = (int)Tabs.ImagePreview;
                 SelectedImageIndex = GetImageIndex(value);
             }
+            else
+            {
+                SelectedImageIndex = -1;
+            }
         }
     }
 
@@ -123,7 +127,6 @@ public sealed class AppState(IScan scan) : IAppState
             return;
         }
 
-        int selectedImageIndex = GetImageIndex(SelectedImage);
         int removeIndex = GetImageIndex(resourceToRemove);
         SelectedFolderResources = Enumerable.Range(0, SelectedFolderResources.Count)
             .Where(i => i != removeIndex)
@@ -133,15 +136,15 @@ public sealed class AppState(IScan scan) : IAppState
         if (SelectedFolderResources.Count > 0)
         {
             if (SelectedTabIndex == (int)Tabs.ImagePreview
-                && selectedImageIndex == removeIndex)
+                && SelectedImageIndex == removeIndex)
             {
-                if (selectedImageIndex >= SelectedFolderResources.Count)
+                if (SelectedImageIndex >= SelectedFolderResources.Count)
                 {
                     SelectedImage = SelectedFolderResources[^1];
                 }
                 else
                 {
-                    SelectedImage = SelectedFolderResources[selectedImageIndex];
+                    SelectedImage = SelectedFolderResources[SelectedImageIndex];
                 }
             }
         }

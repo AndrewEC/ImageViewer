@@ -1,12 +1,21 @@
 namespace ImageViewer.ViewModels;
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reactive;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Presenters;
+using Avalonia.VisualTree;
 using ImageViewer.Injection;
 using ImageViewer.Models;
 using ImageViewer.State;
 using ImageViewer.Utils;
+using ImageViewer.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
@@ -15,8 +24,9 @@ public partial class FolderPreviewViewModel : ViewModelBase
 {
     private readonly ConsoleLogger<FolderPreviewViewModel> logger = new();
     private readonly IAppState appState;
+    private readonly ScrollViewer imageScrollViewer;
 
-    public FolderPreviewViewModel()
+    public FolderPreviewViewModel(FolderPreview parentView)
     {
         appState = ServiceContainer.GetService<IAppState>();
 
@@ -32,6 +42,9 @@ public partial class FolderPreviewViewModel : ViewModelBase
         DeleteImageCommand = ReactiveCommand.Create<PathLike>(DeleteImage);
         ShowInExplorerCommand = ReactiveCommand.Create<PathLike>(ShowInExplorer);
         StartSlideshowCommand = ReactiveCommand.Create<PathLike>(StartSlideshow);
+
+        imageScrollViewer = parentView.FindControl<ScrollViewer>("ImageScrollViewer")!;
+        imageScrollViewer.ScrollChanged += OnImageScrollChanged;
     }
 
     public ReactiveCommand<PathLike, Unit> ImageClickedCommand { get; }
@@ -90,7 +103,7 @@ public partial class FolderPreviewViewModel : ViewModelBase
         logger.Log($"Deleting image [{resourceToDelete.Path.PathString}]");
         if (resourceToDelete.Path.Delete())
         {
-            logger.Log("Image was not successfully deleted.");
+            logger.Log("Image was successfully deleted.");
             appState.RemoveImageFromSelectedFolder(resourceToDelete);
         }
     }
@@ -99,5 +112,43 @@ public partial class FolderPreviewViewModel : ViewModelBase
     {
         logger.Log($"Opening image in explorer: [{path.PathString}]");
         Process.Start("explorer.exe", "/select," + path.PathString);
+    }
+
+    /// <summary>
+    /// Enables lazy loading of the Image thumbnail. By default, the Source property of
+    /// the Image controls in this view are null. When the scroll position changes we
+    /// will check to see if the image is in view. If it is then we will update the
+    /// Source property of the Image control to be the proper thumbnail image triggering
+    /// a load of said thumbnail from disk.
+    /// </summary>
+    private async void OnImageScrollChanged(object? sender, ScrollChangedEventArgs e)
+    {
+        IEnumerable<StackPanel> imagePanels = imageScrollViewer.GetVisualDescendants().OfType<StackPanel>();
+        MainWindow window = GetMainWindow();
+        foreach (StackPanel imagePanel in imagePanels)
+        {
+            ContentPresenter container = (imagePanel.Parent as ContentPresenter)!;
+            double yPosition = container.Bounds.Top - imageScrollViewer.Offset.Y;
+            if (yPosition < window.Bounds.Height)
+            {
+                Image image = imagePanel.GetVisualDescendants().OfType<Image>().First();
+                if (image.Source == null)
+                {
+                    ImageResource imageResource = (container.DataContext as ImageResource)!;
+                    image.Source = await imageResource.Thumbnail;
+                }
+            }
+        }
+    }
+
+    private static MainWindow GetMainWindow()
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime)
+        {
+            return (lifetime.MainWindow as MainWindow)!;
+        }
+#pragma warning disable CA2201
+        throw new Exception("Could not find MainWindow.");
+#pragma warning restore CA2201
     }
 }

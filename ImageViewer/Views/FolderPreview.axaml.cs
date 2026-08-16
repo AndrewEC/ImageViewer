@@ -8,6 +8,6 @@ public partial class FolderPreview : UserControl
     public FolderPreview()
     {
         InitializeComponent();
-        DataContext = new FolderPreviewViewModel();
+        DataContext = new FolderPreviewViewModel(this);
     }
 }
