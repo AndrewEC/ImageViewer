@@ -88,6 +88,7 @@ public class ConfigState : IConfigState
             PathLike configPath = GetConfigFilePath();
             if (!configPath.Parent().CreateDirectory())
             {
+                logger.Log("Could not create config directory. Config changes will not be saved.");
                 return false;
             }
 

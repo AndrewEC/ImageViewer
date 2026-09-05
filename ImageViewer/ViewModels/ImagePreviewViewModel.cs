@@ -93,7 +93,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
         canvasImageManager = new CanvasImageManager();
         canvasImageManager.ImageRectChanged += OnImageRectChanged;
 
-        slideshowManager = new(appState, configState);
+        slideshowManager = new SlideshowManager(appState, configState);
         Handlers.RegisterPropertyChangeHandler(slideshowManager, new()
         {
             {

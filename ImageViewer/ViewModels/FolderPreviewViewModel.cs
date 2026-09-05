@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -22,9 +23,12 @@ using ReactiveUI;
 
 public partial class FolderPreviewViewModel : ViewModelBase
 {
+    private static readonly Lock SyncLock = new();
     private readonly ConsoleLogger<FolderPreviewViewModel> logger = new();
     private readonly IAppState appState;
     private readonly ScrollViewer imageScrollViewer;
+
+    private List<PathLike> loadingThumbnails = [];
 
     public FolderPreviewViewModel(FolderPreview parentView)
     {
@@ -58,7 +62,11 @@ public partial class FolderPreviewViewModel : ViewModelBase
     public List<ImageResource> ImageResources
     {
         get;
-        set => this.RaiseAndSetIfChanged(ref field, value);
+        set
+        {
+            loadingThumbnails = [];
+            this.RaiseAndSetIfChanged(ref field, value);
+        }
     } = [];
 
     private void StartSlideshow(PathLike imagePath)
@@ -123,18 +131,31 @@ public partial class FolderPreviewViewModel : ViewModelBase
     /// </summary>
     private async void OnImageScrollChanged(object? sender, ScrollChangedEventArgs e)
     {
-        IEnumerable<StackPanel> imagePanels = imageScrollViewer.GetVisualDescendants().OfType<StackPanel>();
+        StackPanel[] imagePanels = imageScrollViewer.GetVisualDescendants().OfType<StackPanel>().ToArray();
+        if (imagePanels.Length == 0)
+        {
+            return;
+        }
+
         MainWindow window = GetMainWindow();
         foreach (StackPanel imagePanel in imagePanels)
         {
             ContentPresenter container = (imagePanel.Parent as ContentPresenter)!;
-            double yPosition = container.Bounds.Top - imageScrollViewer.Offset.Y;
-            if (yPosition < window.Bounds.Height)
+            double containerYPosition = container.Bounds.Top - imageScrollViewer.Offset.Y;
+            if (containerYPosition < window.Bounds.Height)
             {
                 Image image = imagePanel.GetVisualDescendants().OfType<Image>().First();
                 if (image.Source == null)
                 {
                     ImageResource imageResource = (container.DataContext as ImageResource)!;
+                    lock(SyncLock)
+                    {
+                        if (loadingThumbnails.Contains(imageResource.Path))
+                        {
+                            continue;
+                        }
+                        loadingThumbnails.Add(imageResource.Path);
+                    }
                     image.Source = await imageResource.Thumbnail;
                 }
             }

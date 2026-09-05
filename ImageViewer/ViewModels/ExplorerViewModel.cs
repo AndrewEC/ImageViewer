@@ -153,8 +153,7 @@ public partial class ExplorerViewModel : ViewModelBase
 
         // canExpandOrCollapse is used to help prevent this method from
         // expanding/collapsing a node in an infinite loop. This value will
-        // be set to false by various callbacks when the user performs a
-        // respective action.
+        // be set to false whenever the tree view is updated again.
         if (!canExpandOrCollapse)
         {
             return;
