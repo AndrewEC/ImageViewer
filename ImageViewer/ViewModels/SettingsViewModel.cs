@@ -27,10 +27,7 @@ public partial class SettingsViewModel : ViewModelBase
         OpenSettingsFolderCommand = ReactiveCommand.Create(OpenSettingsFolder);
 
         initialConfig = configState.LoadConfig();
-        SlideshowIntervalSeconds = initialConfig.SlideshowIntervalMillis / 1000.0;
-        ScanDepthSelectedIndex = initialConfig.ScanDepth - 1;
-        SortMethodIndex = (int)initialConfig.SortMethod;
-        RandomizeSlideshowChecked = initialConfig.RandomizeSlideshow;
+        ResetConfig();
     }
 
     public ReactiveCommand<Unit, Unit> SaveConfigCommand { get; }
@@ -85,6 +82,16 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    public bool MaintainZoomChecked
+    {
+        get;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref field, value);
+            HasUnsavedChanges = HasConfigChanged();
+        }
+    }
+
     private bool HasConfigChanged() => !DeriveConfig().Equals(initialConfig);
 
     private Config DeriveConfig() => new()
@@ -92,7 +99,8 @@ public partial class SettingsViewModel : ViewModelBase
         SlideshowIntervalMillis = (int)(SlideshowIntervalSeconds * 1000),
         ScanDepth = ScanDepthSelectedIndex + 1,
         SortMethod = (SortMethod)SortMethodIndex,
-        RandomizeSlideshow = RandomizeSlideshowChecked
+        RandomizeSlideshow = RandomizeSlideshowChecked,
+        MaintainZoom = MaintainZoomChecked
     };
 
     private async void SaveConfig()
@@ -118,10 +126,12 @@ public partial class SettingsViewModel : ViewModelBase
     private void ResetConfig()
     {
         logger.Log("Resetting configuration UI...");
+
         SlideshowIntervalSeconds = initialConfig.SlideshowIntervalMillis / 1000.0;
         ScanDepthSelectedIndex = initialConfig.ScanDepth - 1;
         SortMethodIndex = (int)initialConfig.SortMethod;
         RandomizeSlideshowChecked = initialConfig.RandomizeSlideshow;
+        MaintainZoomChecked = initialConfig.MaintainZoom;
 
         HasUnsavedChanges = false;
     }

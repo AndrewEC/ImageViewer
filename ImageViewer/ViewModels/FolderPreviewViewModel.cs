@@ -1,6 +1,7 @@
 namespace ImageViewer.ViewModels;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -23,12 +24,11 @@ using ReactiveUI;
 
 public partial class FolderPreviewViewModel : ViewModelBase
 {
-    private static readonly Lock SyncLock = new();
     private readonly ConsoleLogger<FolderPreviewViewModel> logger = new();
     private readonly IAppState appState;
     private readonly ScrollViewer imageScrollViewer;
 
-    private List<PathLike> loadingThumbnails = [];
+    private ConcurrentDictionary<PathLike, ImageResource> loadingPaths = [];
 
     public FolderPreviewViewModel(FolderPreview parentView)
     {
@@ -49,6 +49,7 @@ public partial class FolderPreviewViewModel : ViewModelBase
 
         imageScrollViewer = parentView.FindControl<ScrollViewer>("ImageScrollViewer")!;
         imageScrollViewer.ScrollChanged += OnImageScrollChanged;
+        imageScrollViewer.LayoutUpdated += (sender, e) => OnImageScrollChanged(null, new ScrollChangedEventArgs(Vector.Zero, Vector.Zero, Vector.Zero));;
     }
 
     public ReactiveCommand<PathLike, Unit> ImageClickedCommand { get; }
@@ -64,7 +65,7 @@ public partial class FolderPreviewViewModel : ViewModelBase
         get;
         set
         {
-            loadingThumbnails = [];
+            loadingPaths = [];
             this.RaiseAndSetIfChanged(ref field, value);
         }
     } = [];
@@ -148,13 +149,9 @@ public partial class FolderPreviewViewModel : ViewModelBase
                 if (image.Source == null)
                 {
                     ImageResource imageResource = (container.DataContext as ImageResource)!;
-                    lock(SyncLock)
+                    if (!loadingPaths.TryAdd(imageResource.Path, imageResource))
                     {
-                        if (loadingThumbnails.Contains(imageResource.Path))
-                        {
-                            continue;
-                        }
-                        loadingThumbnails.Add(imageResource.Path);
+                        continue;
                     }
                     image.Source = await imageResource.Thumbnail;
                 }

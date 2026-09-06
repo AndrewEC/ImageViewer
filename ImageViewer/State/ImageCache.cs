@@ -45,7 +45,8 @@ public sealed class ImageCache : IImageCache
 
     private void OnTimerTick(object? sender, ElapsedEventArgs e)
     {
-        lock (SyncLock)
+        SyncLock.Enter();
+        try
         {
             logger.Log("Timer ticked. Checking for expired images...");
 
@@ -67,6 +68,10 @@ public sealed class ImageCache : IImageCache
                 }
             }
         }
+        finally
+        {
+            SyncLock.Exit();
+        }
     }
 
     private static long CurrentTimestamp() => DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -83,16 +88,21 @@ public sealed class ImageCache : IImageCache
 
         logger.Log($"Loading cacheable image [{path}] with key [{cacheKey}]");
 
-        // Try and see if the image already exists in the cache and return it.
-        lock (SyncLock)
+        try
         {
-            if (cache.TryGetValue(cacheKey, out CacheEntry? entry))
+            // Try and see if the image already exists in the cache and return it.
+            SyncLock.Enter();
+            if (cache.TryGetValue(cacheKey, out CacheEntry? dirtyEntry))
             {
                 long currentTime = CurrentTimestamp();
                 logger.Log($"Found cached value for key [{cacheKey}]. Updating timestamp to [{currentTime}]");
-                cache[cacheKey] = entry.WithTimestamp(CurrentTimestamp());
-                return (Bitmap?)entry.Bitmap;
+                cache[cacheKey] = dirtyEntry.WithTimestamp(CurrentTimestamp());
+                return (Bitmap?)dirtyEntry.Bitmap;
             }
+        }
+        finally
+        {
+            SyncLock.Exit();
         }
 
         // If the image does not exist in the cache then load it.
@@ -103,8 +113,9 @@ public sealed class ImageCache : IImageCache
             return null;
         }
 
-        lock (SyncLock)
+        try
         {
+            SyncLock.Enter();
             // One last time check if the image has been cached since the first dirty check and this one.
             if (cache.TryGetValue(cacheKey, out CacheEntry? entry))
             {
@@ -116,6 +127,10 @@ public sealed class ImageCache : IImageCache
                 TryPopOldestImageEntry();
                 return newImage;
             }
+        }
+        finally
+        {
+            SyncLock.Exit();
         }
     }
 

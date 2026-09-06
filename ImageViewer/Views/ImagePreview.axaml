@@ -45,6 +45,7 @@
                         <MenuItem Header="Show in Explorer" Command="{Binding ShowInExplorerCommand}" />
                         <MenuItem Header="Start Slideshow" Command="{Binding StartSlideshowCommand}" />
                         <MenuItem Header="Delete" Command="{Binding DeleteImageCommand}" />
+                        <MenuItem Header="Reset Zoom" Command="{Binding ResetZoomCommand}" />
                     </ContextMenu>
                 </Canvas.ContextMenu>
 

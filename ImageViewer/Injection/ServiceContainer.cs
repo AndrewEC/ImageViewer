@@ -24,7 +24,5 @@ public sealed class ServiceContainer
         provider = services.BuildServiceProvider();
     }
 
-    private T DoGetService<T>() => provider.GetService<T>()!;
-
-    public static T GetService<T>() => Instance.DoGetService<T>();
+    public static T GetService<T>() => Instance.provider.GetService<T>()!;
 }

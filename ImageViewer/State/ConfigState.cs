@@ -41,7 +41,8 @@ public class ConfigState : IConfigState
 
     public Config LoadConfig()
     {
-        lock (SyncLock)
+        SyncLock.Enter();
+        try
         {
             logger.Log("Loading config...");
             if (currentConfig != null)
@@ -56,6 +57,10 @@ public class ConfigState : IConfigState
             currentConfig = loaded;
 
             return new Config(currentConfig);
+        }
+        finally
+        {
+            SyncLock.Exit();
         }
     }
 
@@ -82,7 +87,8 @@ public class ConfigState : IConfigState
 
     public bool SaveConfig(Config nextConfig)
     {
-        lock (SyncLock)
+        SyncLock.Enter();
+        try
         {
             logger.Log("Saving config...");
             PathLike configPath = GetConfigFilePath();
@@ -106,6 +112,10 @@ public class ConfigState : IConfigState
                 logger.Error("Failed to save config.", e);
                 return false;
             }
+        }
+        finally
+        {
+            SyncLock.Exit();
         }
     }
 

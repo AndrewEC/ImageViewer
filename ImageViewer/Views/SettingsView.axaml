@@ -77,6 +77,20 @@
             </StackPanel>
 
             <StackPanel Classes="SettingsRow">
+                <StackPanel Classes="RowPadding" Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox Margin="0,6,10,0" IsChecked="{Binding MaintainZoomChecked}">Maintain Image Zoom</CheckBox>
+                    </StackPanel>
+                    <Panel Classes="SettingsRowDivider"></Panel>
+                    <TextBlock Classes="SettingHelpText">
+                        When previewing an image, if you use the mousewheel to zoom in and out on
+                        an image, that zoom level will be kept when navigating to the next or previous
+                        image. When unselected the zoom level will always reset.
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Classes="SettingsRow">
                 <StackPanel Classes="RowPadding">
                     <Button Command="{Binding SaveConfigCommand}"
                         IsEnabled="{Binding HasUnsavedChanges}"

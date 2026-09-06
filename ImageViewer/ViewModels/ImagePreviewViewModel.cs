@@ -30,9 +30,11 @@ public partial class ImagePreviewViewModel : ViewModelBase
     private readonly IConfigState configState;
     private readonly IScan scan;
     private readonly IInitializer initializer;
+
     private readonly Canvas canvas;
     private readonly Image referenceImage;
     private readonly Grid canvasGrid;
+
     private readonly DragManager canvasDragManager;
     private readonly CanvasImageManager canvasImageManager;
     private readonly SlideshowManager slideshowManager;
@@ -66,6 +68,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
         StopSlideshowCommand = ReactiveCommand.Create(SetSlideshowFalse);
         DeleteImageCommand = ReactiveCommand.Create(DeleteImage);
         ShowInExplorerCommand = ReactiveCommand.Create(ShowInExplorer);
+        ResetZoomCommand = ReactiveCommand.Create(ResetZoom);
 
         canvasGrid = parent.FindControl<Grid>("CanvasGrid")!;
         canvasGrid.AddHandler(DragDrop.DragOverEvent, OnDragOverCanvas);
@@ -115,6 +118,8 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
     public ReactiveCommand<Unit, Unit> ShowInExplorerCommand { get; }
 
+    public ReactiveCommand<Unit, Unit> ResetZoomCommand { get; }
+
     public ImageRect ImageRect
     {
         get;
@@ -139,8 +144,9 @@ public partial class ImagePreviewViewModel : ViewModelBase
         set
         {
             this.RaiseAndSetIfChanged(ref field, value);
-            canvasImageManager.Reset();
+            canvasImageManager.Reset(false);
             canvasDragManager.Reset();
+
             if (value)
             {
                 slideshowManager.StartSlideshow();
@@ -165,7 +171,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
             IsImageSelected = value != null;
 
             canvasDragManager.Reset();
-            canvasImageManager.Reset();
+            canvasImageManager.Reset(configState.LoadConfig().MaintainZoom);
         }
     }
 
@@ -260,6 +266,8 @@ public partial class ImagePreviewViewModel : ViewModelBase
 
         e.DragEffects = DragDropEffects.Move;
     }
+
+    private void ResetZoom() => canvasImageManager.Reset(false);
 
     private void PreviousImage()
     {

@@ -69,9 +69,12 @@ public sealed class CanvasImageManager
         }
     }
 
-    public void Reset()
+    public void Reset(bool keepScale)
     {
-        ImageScale = DefaultScale;
+        if (!keepScale)
+        {
+            ImageScale = DefaultScale;
+        }
         Offset = new Point();
         ComputeImageRect();
     }

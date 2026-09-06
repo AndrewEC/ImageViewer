@@ -4,9 +4,13 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Timers;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;
 using ImageViewer.Models;
 using ImageViewer.State;
 using ImageViewer.Utils;
+using ImageViewer.Views;
 
 #pragma warning disable CA1001
 public sealed class SlideshowManager(IAppState state, IConfigState configState) : INotifyPropertyChanged
@@ -14,9 +18,11 @@ public sealed class SlideshowManager(IAppState state, IConfigState configState) 
 {
     private readonly ConsoleLogger<SlideshowManager> logger = new();
 
+    private MainWindow? mainWindow;
+    private Timer? slideshowTimer;
+
     private int[] imageOrder = [];
     private int currentIndex = -1;
-    private Timer? slideshowTimer;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -42,6 +48,9 @@ public sealed class SlideshowManager(IAppState state, IConfigState configState) 
         slideshowTimer.Elapsed += (sender, e) => NextImage();
         slideshowTimer.AutoReset = true;
         slideshowTimer.Enabled = true;
+
+        mainWindow = GetMainWindow();
+        mainWindow?.Cursor = new Cursor(StandardCursorType.None);
     }
 
     private int[] GenerateImageIndexes(bool randomize)
@@ -70,6 +79,8 @@ public sealed class SlideshowManager(IAppState state, IConfigState configState) 
         slideshowTimer.Stop();
         slideshowTimer.Dispose();
         slideshowTimer = null;
+
+        mainWindow?.Cursor = new Cursor(StandardCursorType.Arrow);
     }
 
     private void NextImage()
@@ -83,4 +94,13 @@ public sealed class SlideshowManager(IAppState state, IConfigState configState) 
     }
 
     public int PeekNextImageIndex() => imageOrder[(currentIndex + 1) % state.SelectedFolderResources.Count];
+
+    private static MainWindow? GetMainWindow()
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime)
+        {
+            return (lifetime.MainWindow as MainWindow)!;
+        }
+        return null;
+    }
 }
