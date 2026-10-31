@@ -8,8 +8,9 @@ public sealed class CanvasImageManager
 {
 
     private const double DefaultScale = 100;
-    private const double MaxScale = DefaultScale * 2;
-    private const double MinScale = DefaultScale / 2;
+    private const double MaxScale = DefaultScale * 5;
+    private const double MinScale = DefaultScale / 5;
+    private const int ScaleMultiplier = 10;
 
     public event EventHandler<ImageRectChangedEventArgs>? ImageRectChanged;
 
@@ -67,6 +68,11 @@ public sealed class CanvasImageManager
             field = value;
             ImageRectChanged?.Invoke(this, new ImageRectChangedEventArgs(value));
         }
+    }
+
+    public void IncrementScale(double amount)
+    {
+        ImageScale += amount * ScaleMultiplier;
     }
 
     public void Reset(bool keepScale)

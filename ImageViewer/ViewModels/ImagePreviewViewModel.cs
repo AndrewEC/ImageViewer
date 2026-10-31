@@ -198,7 +198,7 @@ public partial class ImagePreviewViewModel : ViewModelBase
             return;
         }
 
-        canvasImageManager.ImageScale += e.Delta.Y * 5;
+        canvasImageManager.IncrementScale(e.Delta.Y);
     }
 
     private void OnCanvasDragged(object? sender, InputElementDraggedEventArgs e)

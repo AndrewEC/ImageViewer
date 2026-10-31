@@ -158,6 +158,12 @@ public sealed class PathLike
     public override string ToString() => PathString;
 
     private static string Normalize(string path)
-        => path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
-            .Trim(Path.DirectorySeparatorChar);
+    {
+        string[] value = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+            .Trim(Path.DirectorySeparatorChar)
+            .Split(Path.DirectorySeparatorChar)
+            .Where(part => part != string.Empty)
+            .ToArray();
+        return string.Join(Path.DirectorySeparatorChar, value);
+    }
 }
