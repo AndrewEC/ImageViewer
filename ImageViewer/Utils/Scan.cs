@@ -16,7 +16,7 @@ public interface IScan
 
     void ExpandPath(PathLike startingPath, List<FileResource> rootResources);
 
-    FileResource? FindResourceInTree(PathLike desiredPath, List<FileResource> rootResources);
+    FileResource? FindResourceInTree(PathLike desiredPath, List<FileResource> resourceTree);
 }
 
 public class Scan(IConfigState configState, ISorting sorting) : IScan
@@ -82,12 +82,24 @@ public class Scan(IConfigState configState, ISorting sorting) : IScan
     /// <summary>
     /// Attempts to "expand" all the directories specified in the startingPath.
     /// <para>
-    /// For example given the path "C:\albums\nature" this method will first look for the root
-    /// drive C:\ within the list rootResources. Then it will "expand" the C:\ directory by looking
-    /// up all the directories directly within C:\ and keeping a reference to them. It may
-    /// find folders like "albums", "songs" and "videos". Then it will take the "albums" folder
-    /// "C:\albums" and identify all of its immediate children. It may find the folders "nature"
-    /// and "urban". It will then repeat this process with the "nature" folder.
+    /// For example given the path "C:\albums\nature" this method will first look through the input
+    /// list of rootResources and attempt to find the FileResource that points to C:\.
+    /// Then it will "expand" the C:\ FileResource by looking up all the directories directly
+    /// within C:\ and keeping a reference to them within the FileResource. It may find folders like
+    /// "albums", "songs" and "videos". Then it will take the "albums" folder "C:\albums" and identify
+    /// all of its immediate children. It may find the folders "nature" and "urban". It will then repeat
+    /// this process with the "nature" folder.
+    /// </para>
+    /// <pre>
+    /// Once complete the original FileResource pointing to C:\ from the rootResources list will
+    /// contain a series of nested children in a tree like structure like so:
+    /// - C:\
+    ///   |- songs
+    ///   |- videos
+    ///   |- albums
+    ///     |- urban
+    ///     |- nature
+    ///       |- plants
     /// </para>
     /// </summary>
     public void ExpandPath(PathLike startingPath, List<FileResource> rootResources)
@@ -122,9 +134,9 @@ public class Scan(IConfigState configState, ISorting sorting) : IScan
         return rootResources.Find(resource => resource.Path.Equals(startingRoot));
     }
 
-    public FileResource? FindResourceInTree(PathLike desiredPath, List<FileResource> rootResources)
+    public FileResource? FindResourceInTree(PathLike desiredPath, List<FileResource> resourceTree)
     {
-        FileResource? rootResource = FindMatchingRoot(desiredPath, rootResources);
+        FileResource? rootResource = FindMatchingRoot(desiredPath, resourceTree);
         if (rootResource == null)
         {
             return null;

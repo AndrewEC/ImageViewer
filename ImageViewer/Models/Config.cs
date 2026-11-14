@@ -2,7 +2,7 @@ namespace ImageViewer.Models;
 
 using System;
 
-public sealed class Config
+public struct Config
 {
     public Config() { }
 
@@ -35,6 +35,16 @@ public sealed class Config
         && other.RandomizeSlideshow == RandomizeSlideshow
         && other.MaintainZoom == MaintainZoom;
 
-    public override int GetHashCode()
-        => HashCode.Combine(SlideshowIntervalMillis, ScanDepth, SortMethod, RandomizeSlideshow);
+    public override readonly int GetHashCode()
+        => HashCode.Combine(SlideshowIntervalMillis, ScanDepth, SortMethod, RandomizeSlideshow, MaintainZoom);
+
+    public static bool operator ==(Config left, Config right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Config left, Config right)
+    {
+        return !(left == right);
+    }
 }

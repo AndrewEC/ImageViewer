@@ -85,15 +85,16 @@ public sealed class SlideshowManager(IAppState state, IConfigState configState) 
 
     private void NextImage()
     {
-        int nextIndex = (currentIndex + 1) % state.SelectedFolderResources.Count;
+        int nextIndex = GetNextSlideshowImageIndex();
         logger.Log($"Slideshow timer ticked. Moving from index [{currentIndex}], to [{nextIndex}].");
         currentIndex = nextIndex;
-        // state.SelectedImage = state.SelectedFolderResources[imageOrder[nextIndex]];
         ImageIndex = imageOrder[nextIndex];
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ImageIndex)));
     }
 
-    public int PeekNextImageIndex() => imageOrder[(currentIndex + 1) % state.SelectedFolderResources.Count];
+    public int PeekNextImageIndex() => imageOrder[GetNextSlideshowImageIndex()];
+
+    private int GetNextSlideshowImageIndex() => (currentIndex + 1) % state.SelectedFolderResources.Count;
 
     private static MainWindow? GetMainWindow()
     {

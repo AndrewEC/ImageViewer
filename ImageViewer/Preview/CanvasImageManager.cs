@@ -116,23 +116,20 @@ public sealed class CanvasImageManager
 
     private ImageRect WithNewSize(ImageRect current)
     {
-        double maxWidth = CanvasSize.Width;
-        double maxHeight = CanvasSize.Height;
-
         double imageWidth = ImageSize.Width;
         double imageHeight = ImageSize.Height;
 
-        if (imageWidth > maxWidth)
+        if (imageWidth > CanvasSize.Width)
         {
-            double scaleDown = imageWidth / maxWidth;
-            imageWidth = maxWidth;
+            double scaleDown = imageWidth / CanvasSize.Width;
+            imageWidth = CanvasSize.Width;
             imageHeight /= scaleDown;
         }
 
-        if (imageHeight > maxHeight)
+        if (imageHeight > CanvasSize.Height)
         {
-            double scaleDown = imageHeight / maxHeight;
-            imageHeight = maxHeight;
+            double scaleDown = imageHeight / CanvasSize.Height;
+            imageHeight = CanvasSize.Height;
             imageWidth /= scaleDown;
         }
 

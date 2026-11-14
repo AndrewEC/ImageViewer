@@ -25,7 +25,6 @@ public sealed class ImageCache : IImageCache
     }
 
     private static readonly System.Threading.Lock SyncLock = new();
-    private static readonly string ImageKeyPrefix = "image-";
     private static readonly int ThumbnailHeight = 300;
     private static readonly int TimerTickInterval = 1000 * 60; // 1 minute in milliseconds.
     private static readonly int CacheEntryTimeToLiveMillis = 1000 * 60 * 10; // 10 minutes in milliseconds.
@@ -160,15 +159,14 @@ public sealed class ImageCache : IImageCache
 
     private void TryPopOldestImageEntry()
     {
-        string[] imageKeys = [.. cache.Keys.Where(key => key.StartsWith(ImageKeyPrefix, StringComparison.InvariantCulture))];
-        if (imageKeys.Length < MaxCacheSize)
+        if (cache.Keys.Count < MaxCacheSize)
         {
             return;
         }
 
         logger.Log("Popping oldest item from cache.");
 
-        (string oldestKey, CacheEntry oldestEntry) = imageKeys.Select(key => (key, cache[key]))
+        (string oldestKey, CacheEntry oldestEntry) = cache.Keys.Select(key => (key, cache[key]))
             .OrderBy(entry => entry.Item2.Timestamp)
             .First();
 

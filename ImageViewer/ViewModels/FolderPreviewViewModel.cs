@@ -6,8 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
-using System.Threading;
-using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -141,14 +139,14 @@ public partial class FolderPreviewViewModel : ViewModelBase
         MainWindow window = GetMainWindow();
         foreach (StackPanel imagePanel in imagePanels)
         {
-            ContentPresenter container = (imagePanel.Parent as ContentPresenter)!;
-            double containerYPosition = container.Bounds.Top - imageScrollViewer.Offset.Y;
+            ContentPresenter imageContainer = (imagePanel.Parent as ContentPresenter)!;
+            double containerYPosition = imageContainer.Bounds.Top - imageScrollViewer.Offset.Y;
             if (containerYPosition < window.Bounds.Height)
             {
                 Image image = imagePanel.GetVisualDescendants().OfType<Image>().First();
                 if (image.Source == null)
                 {
-                    ImageResource imageResource = (container.DataContext as ImageResource)!;
+                    ImageResource imageResource = (imageContainer.DataContext as ImageResource)!;
                     if (!loadingPaths.TryAdd(imageResource.Path, imageResource))
                     {
                         continue;

@@ -7,7 +7,7 @@
         xmlns:vm="using:ImageViewer.ViewModels"
         xmlns:view="using:ImageViewer.Views"
 
-        Title="ImageViewer - Version 1.0.0, Build 2"
+        Title="ImageViewer - Version 1.0.1, Build 6"
         Icon="/Assets/imageviewer-logo.ico"
 
         d:DesignWidth="800"

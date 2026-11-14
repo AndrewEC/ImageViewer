@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 public sealed class ServiceContainer
 {
-    public static readonly ServiceContainer Instance = new();
+    private static readonly ServiceContainer Instance = new();
 
     private readonly ServiceProvider provider;
 

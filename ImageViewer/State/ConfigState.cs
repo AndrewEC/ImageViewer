@@ -37,7 +37,8 @@ public class ConfigState : IConfigState
     private static readonly string ConfigFileName = "config.json";
 
     private readonly ConsoleLogger<ConfigState> logger = new();
-    private Config? currentConfig;
+    private Config currentConfig;
+    private bool loaded;
 
     public Config LoadConfig()
     {
@@ -45,7 +46,7 @@ public class ConfigState : IConfigState
         try
         {
             logger.Log("Loading config...");
-            if (currentConfig != null)
+            if (loaded)
             {
                 logger.Log("Config was previously loaded. Returning cached config values.");
                 return new Config(currentConfig);
@@ -53,8 +54,9 @@ public class ConfigState : IConfigState
 
             PathLike configPath = GetConfigFilePath();
             logger.Log($"Using config path: [{configPath}]");
-            Config loaded = DoLoadConfig(configPath);
-            currentConfig = loaded;
+            Config nextConfig = DoLoadConfig(configPath);
+            currentConfig = nextConfig;
+            loaded = true;
 
             return new Config(currentConfig);
         }
